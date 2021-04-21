@@ -612,14 +612,14 @@ def FindRidges(area_fluxes, init_point, R, dphi, lmsize, \
         new_fluxes = area_fluxes
         #new_fluxes = np.ma.masked_array(area_fluxes, \
         #mask=np.ma.masked_equal(eroded, 0).mask, copy=True)
-        if RLC.debug == True:
+        if RLC.debug == 'True':
             print('Initial Cones')
         phi_val1, phi_val2, cone1, cone2, init_point, Error = InitCones(area_fluxes,\
                                 init_point, np.radians(75), lmsize, CompTable, n_comp, source_name, hdu)
 
         #phitot1 = dphi + phi_val1  ##part of the angle restriction idea
         #phitot2 = dphi + phi_val2  ##part of the angle restriction idea
-        if RLC.debug == True:
+        if RLC.debug == 'True':
             print('Initial Cones Completed')
         #print(Error, phi_val1, phi_val2)
         
@@ -2450,7 +2450,8 @@ def TotalFluxSelector(catalogue1, CompTable):
             pass
         else:
             size = FindSizeOfSource(FMArray)
-            print(source_name, size)
+            if RLC.debug == 'True':
+                print(source_name, size)
             sizes.append(size)
     
     source_names1 = np.column_stack((source_names, sizes))

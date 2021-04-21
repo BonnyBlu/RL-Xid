@@ -604,8 +604,7 @@ def FindRidges(area_fluxes, init_point, R, dphi, lmsize, \
     try:
         maxima, maxima_array, eroded = ErodedMaxima(area_fluxes)
     except:
-        if RLC.debug == 'True':
-            print('Erosion Error')
+        print('Erosion Error')
         Error = 'Erosion'
     else:
     # leaves the option of working with the eroded image only.
@@ -677,7 +676,7 @@ def FindRidges(area_fluxes, init_point, R, dphi, lmsize, \
                     phi_val1 = np.array([0, new_phi1])
                     phi_val2 = np.array([0, new_phi2])
                     Rmax = RLC.MaxLen * float(lmsize)
-    
+                    
                     if RLC.debug == 'True':
                         print('Tracing first ridgeline')
                     #Rcounter1 = 0
@@ -832,12 +831,12 @@ def FloodFill(cat_pos, CompTable, n_comp, hdu, flux_array, centre_pos, source_na
     compcounter = 0
     
     for row in CompTable:
-        source3 = row[0]
+        source3 = row[0].rstrip()
         comp_ra = float(row[2])
         comp_dec = float(row[3])
         comp_flux = float(row[4])
-        comp_maj = float(row[5])
-        comp_min = float(row[6])
+        comp_maj = float(row[5]) * 3600  ## Change to arcsecs
+        comp_min = float(row[6]) * 3600  ## Change to arcsecs
         comp_pa = float(row[7])
             
             
@@ -860,7 +859,7 @@ def FloodFill(cat_pos, CompTable, n_comp, hdu, flux_array, centre_pos, source_na
                 ell_maj=comp_maj
                 ell_min=comp_min
                 ell_pa=comp_pa
-    
+                
     if n_comp == 1:
 
         #Write the ellipse to the ds9 region file 
@@ -1005,7 +1004,7 @@ def GetAvailableSources(filename):
 
         source_info = source.strip()
         info_cols = source_info.split(',')
-        source_name = info_cols[0].strip("''").strip('b').strip("''").strip(' ')
+        source_name = info_cols[0].strip("''").strip('b').strip("''").rstrip()
         Lrx = float(info_cols[1])
         Lry = float(info_cols[2])
         ncomp = info_cols[3]
@@ -1358,15 +1357,16 @@ def GetMaskedComp(hdu, source, components, flux_array, CompTable):
     regwrite.write('# Region file format: DS9 version 4.1\n'+'global color=green dashlist=8 3 width=1 font="helvetica 10 normal roman" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1\n'+'fk5\n')
         
     for row in CompTable:
-        source2 = row[0]
+        source2 = row[0].rstrip()
         comp_ra = float(row[2])
         comp_dec = float(row[3])
         comp_flux = float(row[4])
-        comp_maj = float(row[5])
-        comp_min = float(row[6])
+        comp_maj = float(row[5]) * 3600  ## Change to arcsecs
+        comp_min = float(row[6]) * 3600  ## Change to arcsecs
         comp_pa = float(row[7])
         
         if (source_name == source2):
+            print('True')
             if n_comp>=1:
                 ell_ra[compcounter]=comp_ra
                 ell_dec[compcounter]=comp_dec
@@ -1384,6 +1384,7 @@ def GetMaskedComp(hdu, source, components, flux_array, CompTable):
                 ell_pa=comp_pa
 #Defining ellipse regions to mask out unrelated components.
         else:
+            print('False')
             try:
                 compSep=1.0
                 if (abs(float(comp_ra)-float(xra))<=0.4 and abs(float(comp_dec)-float(ydec))<=0.4):
@@ -1873,9 +1874,10 @@ def InitCones(area_fluxes, init_point, dphi, lmsize, CompTable, \
     xmin = np.ma.min(x)
     xmax = np.ma.max(x)
     ymin = np.ma.min(y)
-    ymax = np.ma.max(y)   
+    ymax = np.ma.max(y)
 
-    if (xmin < init_point[0] < xmax) and (ymin < init_point[1] < ymax):
+
+    if (abs(xmin) < abs(init_point[0]) < abs(xmax)) and (abs(ymin) < abs(init_point[1]) < abs(ymax)):
 
         theta1, theta2 = InitDirections(area_fluxes, \
                                         init_point, maxima_array)
@@ -2114,7 +2116,7 @@ def InitPoint(area_fluxes, CompTable, n_comp, source_name, hdu):
         n_comp=int(float(n_comp))  ## This might not be necessary so could take out at a later date.
     except ValueError:
         n_comp=1
-            
+        
     ell_ra=np.zeros(n_comp)
     ell_dec=np.zeros(n_comp)
     ell_maj=np.zeros(n_comp)
@@ -2128,12 +2130,12 @@ def InitPoint(area_fluxes, CompTable, n_comp, source_name, hdu):
     regwrite.write('# Region file format: DS9 version 4.1\n'+'global color=green dashlist=8 3 width=1 font="helvetica 10 normal roman" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1\n'+'fk5\n')
 
     for row in CompTable:
-        source3 = row[0]
+        source3 = row[0].rstrip()
         comp_ra = float(row[2])
         comp_dec = float(row[3])
         comp_flux = float(row[4])
-        comp_maj = float(row[5])
-        comp_min = float(row[6])
+        comp_maj = float(row[5]) * 3600  ## Change to arcsecs
+        comp_min = float(row[6]) * 3600  ## Change to arcsecs
         comp_pa = float(row[7])
             
             
@@ -2158,13 +2160,11 @@ def InitPoint(area_fluxes, CompTable, n_comp, source_name, hdu):
                 ell_maj=comp_maj
                 ell_min=comp_min
                 ell_pa=comp_pa
-
                 regwrite.write('ellipse('+str(comp_ra)+','+str(comp_dec)+','+str(comp_maj)+'",'+str(comp_min)+'",'+str((float(comp_pa)+90.0))+')\n')
                 
     regwrite.close()
         
     ellipses = pyregion.open('temp3.reg').as_imagecoord(hdu[0].header)
-    #print(ellipses)
         
     ellmask = ellipses.get_mask(hdu = hdu[0])
     MaxFluxArray = np.ma.masked_array(area_fluxes, ~ellmask)
@@ -2431,7 +2431,7 @@ def TotalFluxSelector(catalogue1, CompTable):
     
     sizes = []
     for row in source_names:
-        source_name = row[0].strip(" ")
+        source_name = row[0].rstrip()
         Lra = float(row[2])
         Ldec = float(row[3])
         n_comp = float(row[4])
@@ -2456,9 +2456,9 @@ def TotalFluxSelector(catalogue1, CompTable):
     
     source_names1 = np.column_stack((source_names, sizes))
     
-    columns = [str(RLF.SSN), str(RLF.STF), str(RLF.SRA), str(RLF.DEC), str(RLF.SASS), str(RLF.SRAE), str(RLF.DECE), 'Size']  ## Creates column headings for calling rather than indices
+    columns = [str(RLF.SSN), str(RLF.STF), str(RLF.SRA), str(RLF.SDEC), str(RLF.SASS), str(RLF.SRAE), str(RLF.SDECE), 'Size']  ## Creates column headings for calling rather than indices
     table = Table(source_names1, names = columns, dtype = ('S100', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8'))  ## Turns it in to a table
-    #print(table)
+    print(table)
     
     ## The following deals with seperating out the most luminous
     ## If want to use need to put rel_totflux back in as an input
@@ -2488,8 +2488,8 @@ def TotalFluxSelector(catalogue1, CompTable):
     #sub7 = [c & d for c, d in zip(sub3, sub4)] ## Unhash F2
     #sub6 = table['Total_flux'] > 50 ## F3
     #sub8 = [a & b for a, b in zip(sub1, sub2)] ## Unhash S1
-    sub5 = table['Size'] > 0 ## S2  THE ONE I WANT Need to have values to remove any NaN
-    sub9 = table['Total_flux'] > 0 ## F4  THE ONE I WANT Need to have values to remove any NaN
+    sub5 = table['Size'] > RLC.size ## S2  THE ONE I WANT Need to have values to remove any NaN
+    sub9 = table['Total_flux'] > RLC.flux ## F4  THE ONE I WANT Need to have values to remove any NaN
     
     #selection = [e & f for e, f in zip(sub6, sub5)] ## F3S2
     #selection = [g & h for g, h in zip(sub6, sub8)] ## F3S1
@@ -2507,7 +2507,7 @@ def TotalFluxSelector(catalogue1, CompTable):
     ##  Need to unhash and two above if want to add a filter for components as well
     #output = table[selection2] 
     
-    np.savetxt(str(RLF.TFC), output[str(RLF.SSN), str(RLF.SRA), str(RLF.DEC), str(RLF.SASS), 'Size', str(RLF.STF), str(RLF.SRAE), str(RLF.DECE)], fmt='%s', encoding = 'utf-8')  ## Creates a text file with source id, position, number of components, size and flux in it.
+    np.savetxt(str(RLF.TFC), output[str(RLF.SSN), str(RLF.SRA), str(RLF.SDEC), str(RLF.SASS), 'Size', str(RLF.STF), str(RLF.SRAE), str(RLF.SDECE)], fmt='%s', encoding = 'utf-8', delimiter = ',')  ## Creates a text file with source id, position, number of components, size and flux in it.
 
 #############################################
 
@@ -3120,14 +3120,14 @@ def FloodMask(source_name, xra, ydec, n_comp, CompTable, hdu, flux_array):
     regwrite.write('# Region file format: DS9 version 4.1\n'+'global color=green dashlist=8 3 width=1 font="helvetica 10 normal roman" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1\n'+'fk5\n')
         
     for row in CompTable:
-        source2 = row[0]
+        source2 = row[0].rstrip()
         comp_ra = float(row[2])
         comp_dec = float(row[3])
         comp_flux = float(row[4])
-        comp_maj = float(row[5])
-        comp_min = float(row[6])
+        comp_maj = float(row[5]) * 3600 # Converts from degs to arcseconds
+        comp_min = float(row[6]) * 3600 # Thinks it is in arcseconds when it is in degs
         comp_pa = float(row[7])
-        
+
         if (source_name == source2):
             if n_comp>=1:
                 ell_ra[compcounter]=comp_ra
@@ -3185,7 +3185,7 @@ def FloodMask(source_name, xra, ydec, n_comp, CompTable, hdu, flux_array):
     #In the auxiliary data array, turn to an arbitrary non-zero value the pixels inside the ellipse
     region=pyregion.open('temp6.reg').as_imagecoord(hdu[0].header)
     mask=region.get_mask(hdu=hdu[0])
-    flux_array[mask==1]=0.02
+    flux_array[mask==1]=0.1
     #Masking out nearby sources (previously in main code)
     if excludeComp>0:
         region2=pyregion.open('temp5.reg').as_imagecoord(hdu[0].header)
@@ -3213,10 +3213,10 @@ def FloodMask(source_name, xra, ydec, n_comp, CompTable, hdu, flux_array):
         multi_mask=(multi_mask+temp_mask)
     #The output mask will only contain "1" in the areas corresponding to the islands of interest
     flooded_mask=multi_mask
-    #palette=plt.cm.viridis
+    #palette=plt.cm.Set1
     #palette.set_bad('k',0.0)
     #plt.rcParams['figure.figsize']=(10.67,8.0)
-    #A=np.ma.array(data_label,mask=np.isnan(data_label))
+    #A=np.ma.array(mask,mask=np.isnan(data_label))
     #y,x = np.mgrid[slice((0),(sizey),1),
     #               slice((0),(sizex),1)]
     #plt.pcolor(x,y,A,cmap=palette,vmin=np.nanmin(A),vmax=np.nanmax(A))
@@ -3225,7 +3225,7 @@ def FloodMask(source_name, xra, ydec, n_comp, CompTable, hdu, flux_array):
     #plt.axis([x.min(),x.max(),y.min(),y.max()]) 
     #plt.colorbar()
     #plt.savefig('Test2.pdf', dpi=300, format='pdf')
-    #plt.clf()
+    #plt.show()
     
     flooded_array[flooded_mask==0]=np.nan
     

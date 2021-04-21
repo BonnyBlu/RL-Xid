@@ -8,8 +8,12 @@ Constants for the ridgeline toolkit, Host_Distances and SourceSearch.
 @author: bonnybarkus
 """
 
-##  Displays tracking printstatements if set to 'True'
+##  Displays tracking print statements if set to 'True'
 debug = 'True'
+
+## R and dphi sizes
+R = 5 ##  Step size of Ridgeline
+dphi = 60  ## Half angle of cone
 
 ##  AreaFluxes
 KerW = 4  ##  Weight of the kernel in the convolution
@@ -47,7 +51,7 @@ ddel = 0.0004166667  ## The equivalent pixel value for DEC in FITS file in degre
 
 ##  GetRidgePoint
 Jlim = 40/95  ##  Mulitpler of RL Length Max that it can jump under
-MaxJ = 1  ##  Multiplier of source size the RL can jump to
+#MaxJ = 1  ##  Multiplier of source size the RL can jump to
 JMax = 1  ##  Multiplier of max RL len (for RL total to be subtracted from)
 
 ##  MaskedCentre
@@ -76,8 +80,8 @@ rsize = 1/60  #  The distance away along the RA in degrees to form the sub-catal
 dsize = 1/120  #  The distance away along the DEC in degrees to form the sub-catalogue
 
 ##  LikelihoodRatios
-radraerr = 0.2  ## The RA radio on the ridgeline (defined as zero until I know better)
-raddecerr = 0.2  ## The DEC radio error on the ridgeline
+radraerr = 1.5  ## The RA radio on the ridgeline (defined as zero until I know better)
+raddecerr = 1.5  ## The DEC radio error on the ridgeline
 UniWErr = 0.2
 UniLErr = 0.1
 LRAd = 160.0 # float, degrees, RA down the lower value of RA of the Optical sky area

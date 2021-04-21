@@ -79,8 +79,8 @@ rsize = 1/60  #  The distance away along the RA in degrees to form the sub-catal
 dsize = 1/120  #  The distance away along the DEC in degrees to form the sub-catalogue
 
 ##  LikelihoodRatios
-radraerr = 0.2  ## The RA radio on the ridgeline (defined as zero until I know better)
-raddecerr = 0.2  ## The DEC radio error on the ridgeline
+radraerr = 1.5  ## The RA radio on the ridgeline (defined as zero until I know better)
+raddecerr = 1.5  ## The DEC radio error on the ridgeline
 UniWErr = 0.2
 UniLErr = 0.1
 LRAd = 160.0 # float, degrees, RA down the lower value of RA of the Optical sky area
@@ -88,5 +88,5 @@ LRAu = 232.0 # float, degrees, RA up the upper value of RA of the Optical sky ar
 LDECd = 42.0 # float, degrees, DEC down the lower value of DEC of the Optical sky area
 LDECu = 62.0 # float, degrees, DEC up the upper value of the DEC of the Optical sky area
 bw = 0.2  # Bandwidth of KDE
-SigLC = 0.1 # Lofar centre distribution
+SigLC = 0.2 # Lofar centre distribution
 Lth = 0.0 # Threshold for declaring a PossFail

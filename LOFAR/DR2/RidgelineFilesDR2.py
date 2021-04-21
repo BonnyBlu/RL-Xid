@@ -10,6 +10,8 @@ location; a cutouts folder for each of these is required.
 @author: bonnybarkus
 """
 
+path = 'Catalogue/DR2/'
+
 # Load in files
 #LofCat = str('Catalogue/DR2/data/13h_v0.3_new.fits')
 LofCat = str('/Users/bonnybarkus/Documents/Ridgelines/New_Catalogue/Catalogue/data/all_eyeclass_4rms_v1.2_morph_agn_length_err.fits')
@@ -27,27 +29,27 @@ fits = 'Catalogue/fits/'
 fitscutout = 'Catalogue/fits_cutouts/'
 
 # Ridgelines
-TFC = 'total_flux_cutWorkingSet.txt'
-Probs = 'Catalogue/problematic/%s_image.png'
-R1 = 'Catalogue/ResultsNOID/ridgesWorkingSet/%s_ridge1.txt'
-R2 = 'Catalogue/ResultsNOID/ridgesWorkingSet/%s_ridge2.txt'
-Rimage = 'Catalogue/ridges/%s_ridges%d.png'
-psl = 'Catalogue/ResultsNOID/problematic_sources_listWorkingSetDefined.txt'
+TFC = path + 'TotalFluxCut.txt'
+Probs = path + 'problematic/%s_image.png'
+R1 = path + 'ridges/%s_ridge1.txt'
+R2 = path + 'ridges/%s_ridge2.txt'
+Rimage = path + 'ridges/%s_ridges%d.png'
+psl = path + 'problematic_sources_list_.txt'
 
 # SourceSearch
-coc = 'CutOutCats/Cutout_Catalogue-%s.txt'
+coc = path + 'CutOutCats/Cutout_Catalogue-%s.txt'
 #Dists = 'Catalogue/DistancesFull/distances-%s.txt'
-Position = 'Distances/Position_Info.txt'
-RDists = 'Distances/Rdistances-%s.txt'
-LDists = 'Distances/Ldistances-%s.txt'
-NDist = 'Distances/NclosestLdistances-%s.txt'
-NLLR = 'Ratios/NearestLofarLikelihoodRatios-%s.txt'
-NRLR = 'Ratios/NearestRidgeLikelihoodRatios-%s.txt'
-LLR = 'Ratios/LofarLikelihoodRatiosLR-%s.txt'
-RLR = 'Ratios/RidgeLikelihoodRatiosLR-%s.txt'
-NLRI = 'MagnitudeColour/Nearest30InfoLR-%s.txt'
-LRI = 'MagnitudeColour/30InfoLR-%s.txt'
-MagCO = 'MagCutOutCats/Cutout_Catalogue-%s.txt'
+Position = path + 'Distances/Position_Info.txt'
+RDists = path + 'Distances/Rdistances-%s.txt'
+LDists = path + 'Distances/Ldistances-%s.txt'
+NDist = path + 'Distances/NclosestLdistances-%s.txt'
+NLLR = path + 'Ratios/NearestLofarLikelihoodRatios-%s.txt'
+NRLR = path + 'Ratios/NearestRidgeLikelihoodRatios-%s.txt'
+LLR = path + 'Ratios/LofarLikelihoodRatiosLR-%s.txt'
+RLR = path + 'Ratios/RidgeLikelihoodRatiosLR-%s.txt'
+NLRI = path + 'MagnitudeColour/Nearest30InfoLR-%s.txt'
+LRI = path + 'MagnitudeColour/30InfoLR-%s.txt'
+MagCO = path + 'MagCutOutCats/Cutout_Catalogue-%s.txt'
 
 # Table Columns
 SSN = 'Source_Name'  # Source catalogue Source Name
@@ -82,10 +84,9 @@ MagPErr = 'iErr'
 
 
 # Magnitude and Colour Likelihood Ratio
-Odata = 'data/pwfull.txt' # Original DR1 optical txt file
+Odata = path + 'data/pwfull.txt' # Original DR1 optical txt file
 #MLR = 'Catalogue/MagnitudeColourFull/LikelihoodRatios-%s.txt'
-PossHosts = 'Catalogue/PossibleHostsList.csv'
-DR1Hosts = 'MagnitudeColour/HostMagnitude_Info.txt'
-DR1HostsFull = 'MagnitudeColour/HostMagnitude_InfoFull.txt'
-MCLR = 'MagnitudeColour/Nearest30AllLRW1band-%s.txt'
-LR = 'MagnitudeColour/AllLRW1bandLR-%s.txt'
+PossHosts = path + 'Catalogue/PossibleHostsList.csv'
+DR1Hosts = path + 'MagnitudeColour/HostMagnitude_InfoFull.txt'
+MCLR = path + 'MagnitudeColour/Nearest30AllLRW1band-%s.txt'
+LR = path + 'MagnitudeColour/AllLRW1bandLR-%s.txt'

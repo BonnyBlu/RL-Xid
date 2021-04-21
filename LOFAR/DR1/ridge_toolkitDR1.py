@@ -608,14 +608,15 @@ def FindRidges(area_fluxes, init_point, R, dphi, lmsize, \
         new_fluxes = area_fluxes
         #new_fluxes = np.ma.masked_array(area_fluxes, \
         #mask=np.ma.masked_equal(eroded, 0).mask, copy=True)
-        print('Initial Cones')
+        if RLC.debug == 'True':
+            print('Initial Cones')
         phi_val1, phi_val2, cone1, cone2, init_point, Error = InitCones(area_fluxes,\
                                 init_point, np.radians(75), lmsize, CompTable, n_comp, source_name, hdu)
 
         #phitot1 = dphi + phi_val1  ##part of the angle restriction idea
         #phitot2 = dphi + phi_val2  ##part of the angle restriction idea
-        
-        print('Initial Cones Completed')
+        if RLC.debug == 'True':
+            print('Initial Cones Completed')
         #print(Error, phi_val1, phi_val2)
         
         if (np.isnan(phi_val1) and np.isnan(phi_val2)):
@@ -628,7 +629,8 @@ def FindRidges(area_fluxes, init_point, R, dphi, lmsize, \
         else:
             larger_cone1, larger_cone2, init_point, Error = InitCones(area_fluxes, \
                             init_point, np.radians(RLC.Lcone), lmsize, CompTable, n_comp, source_name, hdu)[-4:]
-            #print('Larger Init Cones completed')
+            if RLC.debug == 'True':
+                print('Larger Init Cones completed')
             
             if type(larger_cone1) == np.ndarray or type(larger_cone2) == np.ndarray:
 
@@ -670,8 +672,9 @@ def FindRidges(area_fluxes, init_point, R, dphi, lmsize, \
                     phi_val1 = np.array([0, new_phi1])
                     phi_val2 = np.array([0, new_phi2])
                     Rmax = RLC.MaxLen * float(lmsize)
-    
-                    print('Tracing first ridgeline')
+                    
+                    if RLC.debug == 'True':
+                        print('Tracing first ridgeline')
                     #Rcounter1 = 0
                     Rtot1 = RFNew1
                     Rlen1 = np.array([0, Rtot1])
@@ -696,7 +699,8 @@ def FindRidges(area_fluxes, init_point, R, dphi, lmsize, \
                         if np.isnan(new_phi1):
                             break
     
-                    print('Tracing second ridgeline')
+                    if RLC.debug == 'True':
+                        print('Tracing second ridgeline')
                     Rtot2 = RFNew2
                     Rlen2 = np.array([0, Rtot2])
                     #Rcounter2 = 0
@@ -1573,7 +1577,7 @@ def GetRidgePoint(area_fluxes, ridge_point, cone, check_cone, chain_mask, R, lms
            the mulitplier of maximum ridgeline length that the line
            can jump under to find another location to draw from
     
-    MaxJ - float,
+    #MaxJ - float,
            the multiplier of the source size which determines the maximum
            length the ridgeline can jump to
     
@@ -1640,7 +1644,8 @@ def GetRidgePoint(area_fluxes, ridge_point, cone, check_cone, chain_mask, R, lms
         if safety_stop == True:
 
             new_point = np.full(2, np.nan)
-            print('Ridgeline completed')
+            if RLC.debug == 'True':
+                print('Ridgeline completed')
 
         else:
 
@@ -1674,7 +1679,8 @@ def GetRidgePoint(area_fluxes, ridge_point, cone, check_cone, chain_mask, R, lms
 
             new_point = np.full(2, np.nan)
             new_phi = np.nan
-            print('Ridgeline completed')
+            if RLC.debug == 'True':
+                print('Ridgeline completed')
 
         else:
 
@@ -1877,7 +1883,8 @@ def InitCones(area_fluxes, init_point, dphi, lmsize, CompTable, \
                                                     init_point, CompTable, n_comp, source_name, hdu)
                 previp = np.vstack((previp, new_ip))
                 init_point = new_ip
-                print('Retry Cones Run ' + str(q))
+                if RLC.debug == 'True':
+                    print('Retry Cones Run ' + str(q))
                 new_iparray[(previp[:]).astype(int)] = np.nan
                 q += 1
                 
@@ -2573,7 +2580,8 @@ def TrialSeries(available_sources, components, R, dphi, CompTable):
         
         #area_fluxes1 = AreaFluxes(flux_array)      ## Convolution  
         #rms_array = GetRMSArray(source, hdu, flux_array)
-        print(str(source_name)+' Flood Fill')
+        if RLC.debug == 'True':
+            print(str(source_name)+' Flood Fill')
         try:
             flooded_array = FloodFill(cat_pos, CompTable, n_comp, hdu, flux_array, optical_pos, source_name)
         except IndexError:
@@ -2597,9 +2605,11 @@ def TrialSeries(available_sources, components, R, dphi, CompTable):
             print('Flood Fill Error Occured.  Index Out of Bounds. Further Analysis Aborted')
         #maskedComp_array = GetMaskedComp(hdu, source, components, flooded_array, CompTable)  ## Masking
         else:
-            print(str(source_name)+' Masking')
+            if RLC.debug == 'True':
+                print(str(source_name)+' Masking')
             maskedComp_array = GetMaskedComp(hdu, source, components, flooded_array, CompTable)  ## Masking     
-            print(str(source_name)+' Convolution')
+            if RLC.debug == 'True':
+                print(str(source_name)+' Convolution')
             area_fluxes = AreaFluxes(maskedComp_array)  ## Convolution
         
         
@@ -2615,12 +2625,14 @@ def TrialSeries(available_sources, components, R, dphi, CompTable):
         #init_point[1] = maxflux[0]
         
         #init_point = (float(lmsize)-1, float(lmsize)-1)
-            print(str(source_name)+' Initial Point')
+            if RLC.debug == 'True':
+                print(str(source_name)+' Initial Point')
             init_point = InitPoint(area_fluxes, CompTable, n_comp, source_name, hdu)       
             
     
             # find both ridges and angular directions at each step
-            print(str(source_name)+' Ridgeline')
+            if RLC.debug == 'True':
+                print(str(source_name)+' Ridgeline')
             try:
                 ridge1, phi_val1, Rlen1, ridge2, phi_val2, Rlen2, Error = FindRidges(area_fluxes, \
                                     init_point, R, dphi, lmsize, CompTable, n_comp, source_name, hdu)

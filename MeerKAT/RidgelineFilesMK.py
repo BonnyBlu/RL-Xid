@@ -10,13 +10,13 @@ location; a cutouts folder for each of these is required.
 @author: bonnybarkus
 """
 
-#path = 'Catalogue/MeerKAT/'
+#path = '/home/bbarkus/MeerKAT/'
 
 # Load in files
 #LofCat = str('Catalogue/DR2/data/13h_v0.3_new.fits')
-LofCat = str('/Users/bonnybarkus/Documents/Ridgelines/New_Catalogue/Catalogue/MeerKAT/xmmlss_sources_v1.fits')
+LofCat = str('/home/bbarkus/MeerKAT/xmmlss_sources_v1.fits')
 #CompCat = str('Catalogue/DR2/data/components-v0.3.fits')
-CompCat = str('/Users/bonnybarkus/Documents/Ridgelines/New_Catalogue/Catalogue/MeerKAT/xmmlss_components_v1.fits')
+CompCat = str('/home/bbarkus/MeerKAT/xmmlss_components_v1.fits')
 OptCat = str('Catalogue/data/pwerrunder1.fits')
 OptCatdf = str('Catalogue/data/pwfull.txt')
 

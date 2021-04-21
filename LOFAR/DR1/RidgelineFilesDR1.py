@@ -10,7 +10,7 @@ location; a cutouts folder for each of these is required.
 @author: bonnybarkus
 """
 
-path = 'Catalogue/DR1/'
+path = 'Catalogue/DR1/' # Need to Change
 
 # Load in files
 #LofCat = str('Catalogue/DR2/data/13h_v0.3_new.fits')
@@ -29,27 +29,27 @@ fits = 'Catalogue/fits/'
 fitscutout = 'Catalogue/fits_cutouts/'
 
 # Ridgelines
-TFC = path + 'TotalFluxCutFull.txt'
-Probs = path + 'problematic/%s_image.png'
-R1 = path + 'ridges/%s_ridge1.txt'
-R2 = path + 'ridges/%s_ridge2.txt'
-Rimage = path + 'ridges/%s_ridges%d.png'
-psl = path + 'problematic_sources_list_Full.txt'
+TFC = path + 'TotalFluxCutFull.txt' # Need to Change
+Probs = path + 'problematic/%s_image.png' # Need to Change
+R1 = path + 'ridges/%s_ridge1.txt' # Need to Change
+R2 = path + 'ridges/%s_ridge2.txt' # Need to Change
+Rimage = path + 'ridges/%s_ridges%d.png' # Need to Change
+psl = path + 'problematic_sources_list_Full.txt' # Need to Change
 
 # SourceSearch
-coc = path + 'CutOutCats/Cutout_Catalogue-%s.txt'
+coc = path + 'CutOutCats/Cutout_Catalogue-%s.txt' # Need to Change
 #Dists = 'Catalogue/DistancesFull/distances-%s.txt'
-Position = path + 'Distances/Position_Info.txt'
-RDists = path + 'Distances/Rdistances-%s.txt'
-LDists = path + 'Distances/Ldistances-%s.txt'
-NDist = path + 'Distances/NclosestLdistances-%s.txt'
-NLLR = path + 'Ratios/NearestLofarLikelihoodRatios-%s.txt'
-NRLR = path + 'Ratios/NearestRidgeLikelihoodRatios-%s.txt'
-LLR = path + 'Ratios/LofarLikelihoodRatiosLR-%s.txt'
-RLR = path + 'Ratios/RidgeLikelihoodRatiosLR-%s.txt'
-NLRI = path + 'MagnitudeColour/Nearest30InfoLR-%s.txt'
-LRI = path + 'MagnitudeColour/30InfoLR-%s.txt'
-MagCO = path + 'MagCutOutCats/Cutout_Catalogue-%s.txt'
+Position = path + 'Distances/Position_InfoFull.txt' # Need to Change
+RDists = path + 'Distances/Rdistances-%s.txt' # Need to Change
+LDists = path + 'Distances/Ldistances-%s.txt' # Need to Change
+NDist = path + 'Distances/NclosestLdistances-%s.txt' # Need to Change
+NLLR = path + 'Ratios/NearestLofarLikelihoodRatios-%s.txt' # Need to Change
+NRLR = path + 'Ratios/NearestRidgeLikelihoodRatios-%s.txt' # Need to Change
+LLR = path + 'Ratios/LofarLikelihoodRatiosLR-%s.txt' # Need to Change
+RLR = path + 'Ratios/RidgeLikelihoodRatiosLR-%s.txt' # Need to Change
+NLRI = path + 'MagnitudeColour/Nearest30InfoLR-%s.txt' # Need to Change
+LRI = path + 'MagnitudeColour/30InfoLR-%s.txt' # Need to Change
+MagCO = path + 'MagCutOutCats/Cutout_Catalogue-%s.txt' # Need to Change
 
 # Table Columns
 LSN = 'Source_Name'  # Column of the LOFAR ID
@@ -87,7 +87,6 @@ MagPErr = 'iErr'
 Odata = 'data/pwfull.txt' # Original DR1 optical txt file
 #MLR = 'Catalogue/MagnitudeColourFull/LikelihoodRatios-%s.txt'
 PossHosts = 'Catalogue/PossibleHostsListDR1Full.csv'
-#DR1Hosts = 'MagnitudeColourFull/HostMagnitude_Info.txt'
-DR1HostsFull = path + 'MagnitudeColourFull/HostMagnitude_InfoFull.txt'
-MCLR = path + 'MagnitudeColourFull/Nearest30AllLRW1band-%s.txt'
-LR = path + 'MagnitudeColourFull/AllLRW1bandLR-%s.txt'
+DR1Hosts = path + 'MagnitudeColour/HostMagnitude_InfoFull.txt' # Need to Change
+MCLR = path + 'MagnitudeColour/Nearest30AllLRW1band-%s.txt' # Need to Change
+LR = path + 'MagnitudeColour/AllLRW1bandLR-%s.txt' # Need to Change
