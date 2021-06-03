@@ -1991,7 +1991,7 @@ def NClosestDistances(source_list, available_sources, lofar_table, n):
             if source == asource[0]:
                 lmsize = float(asource[6])
                 
-        file5 = open(RLF.RDists %source, 'r')
+        file5 = open(RLF.LDists %source, 'r')
         
         for row in file5:
             row_info = row.strip()
