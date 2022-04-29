@@ -2456,7 +2456,7 @@ def TotalFluxSelector(catalogue1, CompTable):
     
     source_names1 = np.column_stack((source_names, sizes))
     
-    columns = [str(RLF.SSN), str(RLF.STF), str(RLF.SRA), str(RLF.DEC), str(RLF.SASS), str(RLF.SRAE), str(RLF.DECE), 'Size']  ## Creates column headings for calling rather than indices
+    columns = [str(RLF.SSN), str(RLF.STF), str(RLF.SRA), str(RLF.SDEC), str(RLF.SASS), str(RLF.SRAE), str(RLF.SDECE), 'Size']  ## Creates column headings for calling rather than indices
     table = Table(source_names1, names = columns, dtype = ('S100', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8'))  ## Turns it in to a table
     print(table)
     
@@ -2507,7 +2507,7 @@ def TotalFluxSelector(catalogue1, CompTable):
     ##  Need to unhash and two above if want to add a filter for components as well
     #output = table[selection2] 
     
-    np.savetxt(str(RLF.TFC), output[str(RLF.SSN), str(RLF.SRA), str(RLF.DEC), str(RLF.SASS), 'Size', str(RLF.STF), str(RLF.SRAE), str(RLF.DECE)], fmt='%s', encoding = 'utf-8')  ## Creates a text file with source id, position, number of components, size and flux in it.
+    np.savetxt(str(RLF.TFC), output[str(RLF.SSN), str(RLF.SRA), str(RLF.SDEC), str(RLF.SASS), 'Size', str(RLF.STF), str(RLF.SRAE), str(RLF.SDECE)], fmt='%s', encoding = 'utf-8')  ## Creates a text file with source id, position, number of components, size and flux in it.
 
 #############################################
 
