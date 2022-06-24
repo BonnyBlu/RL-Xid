@@ -90,3 +90,4 @@ LDECu = 62.0 # float, degrees, DEC up the upper value of the DEC of the Optical 
 bw = 0.2  # Bandwidth of KDE
 SigLC = 0.2 # Lofar centre distribution
 Lth = 0.0 # Threshold for declaring a PossFail
+

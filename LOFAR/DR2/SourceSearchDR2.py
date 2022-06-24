@@ -776,8 +776,8 @@ def CreateLDistTable(source, available_sources):
             #source_name = asource[0]
             LOFAR_RA = float(asource[4])
             LOFAR_DEC = float(asource[5])
-            LOFAR_RA_errRad = float(asource[10])
-            LOFAR_DEC_errRad = float(asource[11])
+            LOFAR_RA_errRad = float(asource[8])
+            LOFAR_DEC_errRad = float(asource[9])
             
             file1 = open(RLF.R1 %source, 'r')
             file2 = open(RLF.R2 %source, 'r')
@@ -789,10 +789,10 @@ def CreateLDistTable(source, available_sources):
                 row_info = row.strip()
                 row_cols = row_info.split(',')
                 #allw = row_cols[0].strip("''").strip('b').strip("''")
-                poss_RA = float(row_cols[2])
-                poss_DEC = float(row_cols[3])
-                poss_RA_errOpt = float(row_cols[7])
-                poss_DEC_errOpt = float(row_cols[8])
+                poss_RA = float(row_cols[0])
+                poss_DEC = float(row_cols[1])
+                poss_RA_errOpt = float(row_cols[5])
+                poss_DEC_errOpt = float(row_cols[6])
                 
                 sigRA, sigDEC = SigmaR(LOFAR_RA_errRad, LOFAR_DEC_errRad, poss_RA_errOpt, poss_DEC_errOpt)
                 delRA, delDEC = DeltaRADEC(LOFAR_RA, LOFAR_DEC, poss_RA, poss_DEC)
