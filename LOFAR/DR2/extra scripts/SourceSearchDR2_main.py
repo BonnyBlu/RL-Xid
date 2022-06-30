@@ -79,7 +79,7 @@ def GetCatArea(lcat):
     dd=decmax-decmin
     dmid=(decmin+decmax)/2.0
     dr=(ramax-ramin)*np.cos(dmid*np.pi/180.0)
-    a=dr*dd*3600*3600.0
+    a=dr*dd
     return a
 
 def AllDistFromLofar(source_list):
@@ -427,10 +427,9 @@ def CreateCutOutCat(source, lofar_table, subcat, Lra, Ldec, lengthpix):
     
     cutoutcat['disfromLOFAR'] = disfromlofar
     print("Source is "+str(source)+" and length of cat is "+str(len(cutoutcat)))
-    lcat=len(cutoutcat)
     np.savetxt(RLF.coc %source, cutoutcat[str(RLF.PossRA), str(RLF.PossDEC), 'xpix', 'ypix', 'disfromLOFAR', 'raErr', 'decErr'], delimiter = ',', fmt='%s', encoding = 'utf-8')
 
-    return cutoutcat,lcat
+    return cutoutcat
 
 #############################################
     
@@ -1894,8 +1893,8 @@ def LikelihoodRatios(source_list, available_sources):
                     
                     RidgeY = Lambda(RLsigRA, RLsigDEC)
                     
-                    #optdensity = RLC.optcount / area
-                    optdensity = 1.0 # test
+                    optdensity = RLC.optcount / area
+                    #optdensity = 1.0 # test
                     
                     #RidgeLR = (optdensity / (np.float128(2.0) * RidgeY)) * np.exp(((RidgeRDist ** np.float128(2.0)) / np.float128(2.0)) * ((np.float128(2.0) * RidgeY) - np.float128(1.0))) # Best et al
                     RidgeLR = (np.float128(1.0) / (np.sqrt(2.0*np.pi*(1/optdensity)) * RLsigRA)) * np.exp(((-RidgeRDist ** np.float128(2.0)) /(2.0*RLsigRA*RLsigRA)))
@@ -2786,16 +2785,16 @@ def TableFromLofar(lofarcat):
     
     hdulist = fits.open(lofarcat)  ## Open the only Catalogue
     tbdata = hdulist[1].data  ## Find the data
-    Name = tbdata.field(str(RLF.SSN))  ## Find the source name
-    Lra = tbdata.field(str(RLF.SRA))  ## Find the LOFAR RA position column of the source (degree)
-    Ldec = tbdata.field(str(RLF.SDEC))  ## Find the LOFAR DEC position column of the source (degree)
+    Name = tbdata.field(str(RLF.LSN))  ## Find the source name
+    Lra = tbdata.field(str(RLF.LRA))  ## Find the LOFAR RA position column of the source (degree)
+    Ldec = tbdata.field(str(RLF.LDEC))  ## Find the LOFAR DEC position column of the source (degree)
     #Lwise = tbdata.field('AllWISE')  ## Find the AllWISE ID
     #LID = tbdata.field('objID')  ## Find the object ID of the source
     #Lz = tbdata.field(str(RLF.LredZ))  ## Find the redshift of the source
     #Lsize = tbdata.field('LGZ_size')  ## Find the size of the source (arcsec)    
     source_names = np.column_stack((Name, Lra, Ldec))
     ## Stack all four columns next to each other. Note: Does it deal with missing data?
-    columns = [str(RLF.SSN), str(RLF.SRA), str(RLF.SDEC)]  ## Creates column headings for calling rather than indices
+    columns = [str(RLF.LSN), str(RLF.LRA), str(RLF.LDEC)]  ## Creates column headings for calling rather than indices
     Ltable = Table(source_names, names = columns, dtype = ('S100', 'f8', 'f8'))  ## Turns it in to a table
     
     return Ltable

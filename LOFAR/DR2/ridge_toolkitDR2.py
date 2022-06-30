@@ -612,14 +612,14 @@ def FindRidges(area_fluxes, init_point, R, dphi, lmsize, \
         new_fluxes = area_fluxes
         #new_fluxes = np.ma.masked_array(area_fluxes, \
         #mask=np.ma.masked_equal(eroded, 0).mask, copy=True)
-        if RLC.debug == 'True':
+        if RLC.debug == True:
             print('Initial Cones')
         phi_val1, phi_val2, cone1, cone2, init_point, Error = InitCones(area_fluxes,\
                                 init_point, np.radians(75), lmsize, CompTable, n_comp, source_name, hdu)
 
         #phitot1 = dphi + phi_val1  ##part of the angle restriction idea
         #phitot2 = dphi + phi_val2  ##part of the angle restriction idea
-        if RLC.debug == 'True':
+        if RLC.debug == True:
             print('Initial Cones Completed')
         #print(Error, phi_val1, phi_val2)
         
@@ -807,7 +807,7 @@ def FloodFill(cat_pos, CompTable, n_comp, hdu, flux_array, centre_pos, source_na
     coords_cat = SkyCoord(ra=float(cat_pos[0])*u.degree, dec=float(cat_pos[1])*u.degree, frame='fk5')
     
     #Create temporary ds9 region file to use as initial mask
-    regwrite=open('temp4.reg','w')
+    regwrite=open(RLF.tmpdir+'temp4.reg','w')
     regwrite.write('# Region file format: DS9 version 4.1\n'+'global color=green dashlist=8 3 width=1 font="helvetica 10 normal roman" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1\n'+'fk5\n')
 
     #Define auxiliary array filled with "1", which we will use to create the masks, and auxiliary data array to fill in the ellipses 
@@ -868,7 +868,7 @@ def FloodFill(cat_pos, CompTable, n_comp, hdu, flux_array, centre_pos, source_na
         regwrite.close()
         
         #In the auxiliary data array, turn to an arbitrary non-zero value the pixels inside the ellipse
-        region=pyregion.open('temp4.reg').as_imagecoord(hdu[0].header)
+        region=pyregion.open(RLF.tmpdir+'temp4.reg').as_imagecoord(hdu[0].header)
         mask=region.get_mask(hdu=hdu[0])
         mask_array[mask==1]=0.02
 
@@ -905,7 +905,7 @@ def FloodFill(cat_pos, CompTable, n_comp, hdu, flux_array, centre_pos, source_na
         regwrite.close()
         
         #In the data array, turn to an arbitrary non-zero value the pixels inside the ellipse
-        region=pyregion.open('temp4.reg').as_imagecoord(hdu[0].header)
+        region=pyregion.open(RLF.tmpdir+'temp4.reg').as_imagecoord(hdu[0].header)
         mask=region.get_mask(hdu=hdu[0])
         mask_array[mask==1]=0.02
 
@@ -1006,6 +1006,7 @@ def GetAvailableSources(filename):
         source_info = source.strip()
         info_cols = source_info.split()
         source_name = info_cols[0].strip("''").strip('b').strip("''")
+        source_name = source_name.rstrip()
         Lrx = float(info_cols[1])
         Lry = float(info_cols[2])
         ncomp = info_cols[3]
@@ -1354,7 +1355,7 @@ def GetMaskedComp(hdu, source, components, flux_array, CompTable):
     compcounter = 0
     excludeComp = 0
         
-    regwrite=open('temp2.reg','w')  ## Creates the file for storing the infor about excluded regions
+    regwrite=open(RLF.tmpdir+'temp2.reg','w')  ## Creates the file for storing the infor about excluded regions
     regwrite.write('# Region file format: DS9 version 4.1\n'+'global color=green dashlist=8 3 width=1 font="helvetica 10 normal roman" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1\n'+'fk5\n')
         
     for row in CompTable:
@@ -1402,7 +1403,7 @@ def GetMaskedComp(hdu, source, components, flux_array, CompTable):
 #First we mask out unrelated components, ( Beas code )
 
     if excludeComp==1:
-        exRegion=pyregion.open('temp2.reg').as_imagecoord(hdu[0].header)
+        exRegion=pyregion.open(RLF.tmpdir+'temp2.reg').as_imagecoord(hdu[0].header)
         exMask=exRegion.get_mask(hdu=hdu[0])
         #print(maskedComp_array.mask)
         #maskedComp_array[exMask]=np.ma.masked
@@ -2124,7 +2125,7 @@ def InitPoint(area_fluxes, CompTable, n_comp, source_name, hdu):
         
     compcounter = 0
 
-    regwrite=open('temp3.reg','w')  ## Creates the file for storing the info about excluded regions
+    regwrite=open(RLF.tmpdir+'temp3.reg','w')  ## Creates the file for storing the info about excluded regions
     regwrite.write('# Region file format: DS9 version 4.1\n'+'global color=green dashlist=8 3 width=1 font="helvetica 10 normal roman" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1\n'+'fk5\n')
 
     for row in CompTable:
@@ -2163,7 +2164,7 @@ def InitPoint(area_fluxes, CompTable, n_comp, source_name, hdu):
                 
     regwrite.close()
         
-    ellipses = pyregion.open('temp3.reg').as_imagecoord(hdu[0].header)
+    ellipses = pyregion.open(RLF.tmpdir+'temp3.reg').as_imagecoord(hdu[0].header)
     #print(ellipses)
         
     ellmask = ellipses.get_mask(hdu = hdu[0])
@@ -2407,7 +2408,8 @@ def TotalFluxSelector(catalogue1, CompTable):
     The structure of .txt file is based on the sarah_sddsmatches.txt.
 
     """
-    
+    print("Total flux selector opening: ",catalogue1)
+    #print("Components table is ",CompTable)
     hdulist = fits.open(catalogue1)  ## Open the only Catalogue
     tbdata = hdulist[1].data  ## Find the data
     Names = tbdata.field(str(RLF.SSN))  ## Find the Source Name Column
@@ -2428,7 +2430,7 @@ def TotalFluxSelector(catalogue1, CompTable):
     
     source_names = np.column_stack((Names, Flux, Lra, Ldec, compnum, LraE, LdecE))
     ## Stack all four columns next to each other. Note: Does it deal with missing data?
-    
+    print("First source is ",Names[0])
     sizes = []
     for row in source_names:
         source_name = row[0]
@@ -2441,8 +2443,10 @@ def TotalFluxSelector(catalogue1, CompTable):
         
         hdu = DefineHDU(source_name)
         flux_array = GetFluxArray(source_name)
+        print("Max of flux array is ",np.nanmax(flux_array))
         try:
             FMArray = FloodMask(source_name, Lra, Ldec, n_comp, CompTable, hdu, flux_array)
+            print("Max of FMArray is ",np.nanmax(FMArray))
         except:
             print(source_name, 'Flood Fill and Mask Error. Source Not Suitable')
             size = np.nan
@@ -2450,10 +2454,9 @@ def TotalFluxSelector(catalogue1, CompTable):
             pass
         else:
             size = FindSizeOfSource(FMArray)
-            if RLC.debug == 'True':
-                print(source_name, size)
+            print(source_name, size)
             sizes.append(size)
-    
+        print("Final size and flux: ",size,row[1])
     source_names1 = np.column_stack((source_names, sizes))
     
     columns = [str(RLF.SSN), str(RLF.STF), str(RLF.SRA), str(RLF.SDEC), str(RLF.SASS), str(RLF.SRAE), str(RLF.SDECE), 'Size']  ## Creates column headings for calling rather than indices
@@ -3102,6 +3105,8 @@ def FloodMask(source_name, xra, ydec, n_comp, CompTable, hdu, flux_array):
     #Create the appropriate arrays and counter to fill them in
     flooded_array = flux_array.copy()
     
+    print("FM: source and ncomp is ",str(source_name),str(xra),str(ydec))
+
     try: 
         n_comp=int(float(n_comp))  ## This might not be necessary so could take out at a later date.
     except ValueError:
@@ -3117,10 +3122,14 @@ def FloodMask(source_name, xra, ydec, n_comp, CompTable, hdu, flux_array):
     compcounter = 0
     excludeComp = 0
         
-    regwrite=open('temp5.reg','w')  ## Creates the file for storing the infor about excluded regions
+    regwrite=open(RLF.tmpdir+'/temp5.reg','w')  ## Creates the file for storing the infor about excluded regions
     regwrite.write('# Region file format: DS9 version 4.1\n'+'global color=green dashlist=8 3 width=1 font="helvetica 10 normal roman" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1\n'+'fk5\n')
-        
+    print("Opening comp table of length ",len(CompTable))   
     for row in CompTable:
+        #print("processing row")
+        #print("FM: Source is ",source_name,"X")
+        #print(row)
+        
         source2 = row[0]
         comp_ra = float(row[2])
         comp_dec = float(row[3])
@@ -3129,7 +3138,11 @@ def FloodMask(source_name, xra, ydec, n_comp, CompTable, hdu, flux_array):
         comp_min = float(row[6])
         comp_pa = float(row[7])
         
+        #source2 = row['Parent_Source']
+        source2 = source2.rstrip()
+        #print("FM: source2 is ",source2,"X")
         if (source_name == source2):
+            #print("FM: Found a match, ncomp = ",n_comp)
             if n_comp>=1:
                 ell_ra[compcounter]=comp_ra
                 ell_dec[compcounter]=comp_dec
@@ -3145,22 +3158,26 @@ def FloodMask(source_name, xra, ydec, n_comp, CompTable, hdu, flux_array):
                 ell_maj=comp_maj
                 ell_min=comp_min
                 ell_pa=comp_pa
+            
 #Defining ellipse regions to mask out unrelated components.
         else:
             try:
                 compSep=1.0
+                #print("ellipse props: ",comp_ra,comp_dec,comp_maj,comp_min,comp_pa)
                 if (abs(float(comp_ra)-float(xra))<=0.4 and abs(float(comp_dec)-float(ydec))<=0.4):
                     coordsOpt=SkyCoord(ra=float(xra)*u.degree, dec=float(ydec)*u.degree, frame='fk5')
                     coordsComp=SkyCoord(ra=float(comp_ra)*u.degree, dec=float(comp_dec)*u.degree, frame='fk5')
                     compSep=coordsOpt.separation(coordsComp)/u.degree
                     if compSep<=0.5:
+                        #print("Found a close component and writing it to temp5 - ra is",comp_ra)
                         regwrite.write('ellipse('+str(comp_ra)+','+str(comp_dec)+','+str(comp_maj)+'",'+str(comp_min)+'",'+str((float(comp_pa)+90.0))+')\n')
                         if excludeComp!=1:
                             excludeComp=1
             except ValueError:
+                #print("Found value error?")
                 pass
     regwrite.close()
-
+    #print("Finished writing to temp5")
 #[OTHER CODE TO TRANSFORM COORDINATES, ETC]
 #First we mask out unrelated components, ( Beas code )
 
@@ -3175,7 +3192,7 @@ def FloodMask(source_name, xra, ydec, n_comp, CompTable, hdu, flux_array):
     
     #Preliminary tasks
     #Create temporary ds9 region file to use as initial mask
-    regwrite=open('temp6.reg','w')
+    regwrite=open(RLF.tmpdir+'/temp6.reg','w')
     regwrite.write('# Region file format: DS9 version 4.1\n'+'global color=green dashlist=8 3 width=1 font="helvetica 10 normal roman" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1\n'+'fk5\n')
     #Define auxiliary array filled with "1", which we will use to create the masks, and auxiliary data array to fill in the ellipses 
     sizey,sizex=flux_array.shape
@@ -3184,12 +3201,12 @@ def FloodMask(source_name, xra, ydec, n_comp, CompTable, hdu, flux_array):
         regwrite.write('ellipse('+str(ell_ra[n])+','+str(ell_dec[n])+','+str(ell_maj[n])+'",'+str(ell_min[n])+'",'+str(ell_pa[n]+90.0)+')\n')
     regwrite.close()
     #In the auxiliary data array, turn to an arbitrary non-zero value the pixels inside the ellipse
-    region=pyregion.open('temp6.reg').as_imagecoord(hdu[0].header)
+    region=pyregion.open(RLF.tmpdir+'/temp6.reg').as_imagecoord(hdu[0].header)
     mask=region.get_mask(hdu=hdu[0])
     flux_array[mask==1]=0.02
     #Masking out nearby sources (previously in main code)
     if excludeComp>0:
-        region2=pyregion.open('temp5.reg').as_imagecoord(hdu[0].header)
+        region2=pyregion.open(RLF.tmpdir+'/temp5.reg').as_imagecoord(hdu[0].header)
         maskOut=region2.get_mask(hdu=hdu[0])
         #Making sure that we only mask where the cutout is defined
         exclude_overlap=maskOut+one_mask        
