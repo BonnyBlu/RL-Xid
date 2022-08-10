@@ -1,7 +1,11 @@
 #!/usr/bin/python
 
+from __future__ import print_function
+
 '''
 Filters radio and optical catalogues ready for processing, and batches radio catalogue into catalogues of 500 sources each in a separate sub-directory ready for DR2_setup.py.
+
+Input radio catalogue should be pre-filtered, e.g. all LGZ sources without optical IDs
 '''
 
 import numpy as np
@@ -19,20 +23,19 @@ ocat=Table.read(ofil)
 # Filter radio catalogue for flux and size
 
 rfcut=rcat[rcat['Total_flux']>10.0]
-rmcut=rfcut[rfcut['Maj']>15.0]
-rlcut=rfcut[rfcut['LGZ_Size']>15.0]
-rsjoin=vstack([rmcut,rlcut])
-rscut=unique(rsjoin)
-print "Length of rm, rl: ",len(rmcut),len(rlcut)
+rmcutf=rfcut['Maj']>15.0
+rlcutf=rfcut['LGZ_Size']>15.0
+rscut=rfcut[rmcutf | rlcutf]
+print("Length of rm, rl: ",np.sum(rmcutf),np.sum(rlcutf))
 
 lrad=len(rscut)
-print "Length of filtered radio catalogue is "+str(lrad)
+print("Length of filtered radio catalogue is "+str(lrad))
 
 # Filter optical catalogue for WISE dets
 
 ocut=ocat[ocat['UNWISE_OBJID']!="N/A"]
 
-print "Length of filtered hosts catalogue is "+str(len(ocut))
+print("Length of filtered hosts catalogue is "+str(len(ocut)))
 
 # Batch radio catalogue
 
@@ -49,14 +52,14 @@ for b in range(0,nbatch):
     try:
         os.mkdir(bdir)
     except:
-        print "Directory "+bdir+" exists"
-    newrcat.write(bname)
+        print("Directory "+bdir+" exists")
+    newrcat.write(bname,overwrite=True)
     start=end
     end=end+500
 
 # write full cats to parent directory
 
-rscut.write("radio_filtered.fits")
-ocut.write("optical_filtered.fits")
+rscut.write("radio_filtered.fits",overwrite=True)
+ocut.write("optical_filtered.fits",overwrite=True)
 
 
