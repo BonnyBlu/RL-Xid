@@ -33,12 +33,12 @@ nums=np.random.choice(len(gtab),300,replace=False)
 
 keep=gtab[nums]
 
-keep.write(outrand)
+keep.write(outrand,overwrite=True)
 
-intab.remove_columns(['UID_L','PossFail'])
-intab.rename_column('RA','optRA_RLC')
-intab.rename_column('DEC','optDEC_RLC')
+gtab.remove_columns(['UID_L','PossFail'])
+gtab.rename_column('RA','optRA_RLC')
+gtab.rename_column('DEC','optDEC_RLC')
 
-intab.write(outfits)
+gtab.write(outfits,overwrite=True)
 
 #print intab['LRMagBoth']
