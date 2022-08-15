@@ -27,7 +27,7 @@ from skimage.morphology import erosion
 from skimage.feature import peak_local_max
 from skimage.filters import threshold_minimum
 import copy
-from sizeflux_tools import Flood
+from sizeflux_tools import Flood,length3
 
 #############################################
 
@@ -2397,7 +2397,7 @@ def TotalFluxSelector(catalogue1, ffo):
     print("Total flux selector opening: ",catalogue1)
     #print("Components table is ",CompTable)
     tbdata = Table.read(catalogue1)  ## Open the radio Catalogue
-    tbdata['Size'] = np.where(~np.isnan(tbdata['LGZ_Size']/3600.0),tbdata['LGZ_Size'],2*tbdata['Maj']*2.0/3600.0)  ## Find the source size in deg -- gives estimate to filter exclusion catalogue only
+    tbdata['Size'] = np.where(~np.isnan(tbdata['LGZ_Size']),tbdata['LGZ_Size']/3600.0,2*tbdata['Maj']*2.0/3600.0)  ## Find the source size in deg -- gives estimate to filter exclusion catalogue only
     print("First source is ",tbdata[0][RLF.SSN])
     sizes = []
     for r in tbdata:
@@ -2412,8 +2412,8 @@ def TotalFluxSelector(catalogue1, ffo):
         hdu = DefineHDU(source_name)
         flux_array = GetFluxArray(source_name)
         print("Max of flux array is ",np.nanmax(flux_array))
-        print('Excluding components below',isize)
-        cinc,cexc=ffo.select(source_name,Lra,Ldec,isize)
+        hdu[0].data=flux_array # otherwise not passed to mask!
+        cinc,cexc=ffo.select(source_name,Lra,Ldec,isize,verbose=True)
         print("Lengths of included and excluded comps are:",len(cinc),len(cexc))
 
         try:
@@ -2547,8 +2547,11 @@ def TrialSeries(available_sources, components, R, dphi, ffo):
         Lra = source[RLF.SRA]
         Ldec = source[RLF.SDEC]
         lmsize = source['Size']
-        flux_array = GetCutoutArray(source_name)
-        hdu = DefineCutoutHDU(source_name)
+        #flux_array = GetCutoutArray(source_name)
+        #hdu = DefineCutoutHDU(source_name)
+        hdu = DefineHDU(source_name)
+        flux_array = GetFluxArray(source_name)
+        hdu[0].data=flux_array # otherwise not passed to mask!
         
         optical_pos = (float(lmsize), float(lmsize))
         
@@ -2982,7 +2985,7 @@ def FindSizeOfSource(array):
     #print(source)
     #array = GetFluxArray(str(source))
     
-    sourcesize = RLC.ddel*3600.0*length(array)
+    sourcesize = RLC.ddel*3600.0*length3(array)
 
     return sourcesize 
 #############################################
