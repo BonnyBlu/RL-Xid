@@ -27,6 +27,7 @@ from skimage.morphology import erosion
 from skimage.feature import peak_local_max
 from skimage.filters import threshold_minimum
 import copy
+from sizeflux_tools import Flood
 
 #############################################
 
@@ -149,11 +150,13 @@ def CheckQuadrant(angle):
 
 def ComponentsTable(components):
     
-    """
-    Returns a table of LOFAR Galaxy Zoo Associated components to each 
+    """Returns a table of LOFAR Galaxy Zoo Associated components to each 
     source in available sources, their central position RA and DEC, 
     their Total Flux, the Maj and Min axes and the angle of rotation of
     the ellipse.
+
+    This is converted from the standard component table by putting the
+    fields in a specific order so that they can be indexed numerically.
     
     Parameters
     ----------
@@ -169,21 +172,12 @@ def ComponentsTable(components):
                 source.  Listing the location RA and DEC, the ellipse
                 Maj and Min axes and the angle of rotation.  As well as
                 the Total Flux of the component.
-                
+
     """
     
-    hdulistC = fits.open(components)  ## Open the components catalogue
-    tbdataC = hdulistC[1].data  ## Turn out the data part
-    SN2 = tbdataC.field(str(RLF.CSN))
-    CName = tbdataC.field(str(RLF.CCN))
-    Cra = tbdataC.field(str(RLF.CRA))
-    Cdec = tbdataC.field(str(RLF.CDEC))
-    Cflux = tbdataC.field(str(RLF.CTF))
-    Cmaj = tbdataC.field(str(RLF.CMAJ))
-    Cmin = tbdataC.field(str(RLF.CMIN))
-    Cpa = tbdataC.field(str(RLF.CPA))
-    columns2 = [str(RLF.CSN), str(RLF.CCN), str(RLF.CRA), str(RLF.CDEC), str(RLF.CTF), str(RLF.CMAJ), str(RLF.CMIN), str(RLF.CPA)]
-    component_list = np.column_stack((SN2, CName, Cra, Cdec, Cflux, Cmaj, Cmin, Cpa))
+    t = Table.read(components)
+    columns2 = [RLF.CSN, RLF.CCN, RLF.CRA, RLF.CDEC, RLF.CTF, RLF.CMAJ, RLF.CMIN, RLF.CPA]
+    component_list = [t[c] for c in columns2]
     CompTable = Table(component_list, names = columns2)
     
     return CompTable
@@ -260,13 +254,7 @@ def CreateCutouts(available_sources):
     Parameters
     ----------
     
-    available_sources - 2D array, shape(n, 8), dtype='str'
-                        array containing n source names and LOFAR Catalogue
-                        locations in pixel values, number of components
-                        associated with source and LOFAR catalogue locations
-                        as RA and DEC, the length of the source in pixels
-                        and the total flux for all files available in a 
-                        given directory    
+    available_sources - astropy Table
     
     Constants
     ---------
@@ -293,9 +281,9 @@ def CreateCutouts(available_sources):
     
     for source in available_sources[RLC.Start::RLC.Step]:
         
-        source_name = source[0]
-        centre_pos = source[1:3].astype('float64')
-        lmsize = source[6]
+        source_name = source['Source_Name']
+        centre_pos = (source['RA'],source['DEC'])
+        lmsize = source['Size']
         hdu = DefineHDU(source_name)
         data = hdu[0].data
         
@@ -2374,7 +2362,7 @@ def RetryDirections(new_iparray, init_point, CompTable, n_comp, source_name, hdu
 
 #############################################
 
-def TotalFluxSelector(catalogue1, CompTable):
+def TotalFluxSelector(catalogue1, ffo):
 
     """
     Saves a .txt file containing source names and their LOFAR catalogue
@@ -2392,9 +2380,7 @@ def TotalFluxSelector(catalogue1, CompTable):
                  path and name to the catalogue .fits file
 
 
-    ## rel_totflux - float, (removed as no longer doing a straight flux cut)
-                     value of the total flux value cut-off, given as
-                     a fraction of the maximum value, for e.g. 0.1 ##
+    ffo: a Flood object from sizeflux
     
     Constants
     ---------
@@ -2410,42 +2396,29 @@ def TotalFluxSelector(catalogue1, CompTable):
     """
     print("Total flux selector opening: ",catalogue1)
     #print("Components table is ",CompTable)
-    hdulist = fits.open(catalogue1)  ## Open the only Catalogue
-    tbdata = hdulist[1].data  ## Find the data
-    Names = tbdata.field(str(RLF.SSN))  ## Find the Source Name Column
-    Flux = tbdata.field(str(RLF.STF))  ## Find the Total Flux Column
-    Lra = tbdata.field(str(RLF.SRA))  ## Find the RA position Column of the LOFAR position
-    LraE = tbdata.field(str(RLF.SRAE))  ## Find the error on the RA of the LOFAR position
-    Ldec = tbdata.field(str(RLF.SDEC))  ## Find the DEC position Column of the LOFAR position
-    LdecE = tbdata.field(str(RLF.SDECE))  ## Find the error on the DEC of the LOFAR position
-    compnum = tbdata.field(str(RLF.SASS))  ## Find the number of associated components
-    #size = tbdata.field('LGZ_Size')  ## Find the source size in Arcsecs
-    #idra = tbdata.field('ID_ra')  ## Find the Optical ID RA
-    #iddec = tbdata.field('ID_dec')  ## Find the Optical DEC 
-    
-    #size = []
-    #for source in Names:
-        #Ssize = FindSizeOfSource(source)
-        #size.append(Ssize)
-    
-    source_names = np.column_stack((Names, Flux, Lra, Ldec, compnum, LraE, LdecE))
-    ## Stack all four columns next to each other. Note: Does it deal with missing data?
-    print("First source is ",Names[0])
+    tbdata = Table.read(catalogue1)  ## Open the radio Catalogue
+    tbdata['Size'] = np.where(~np.isnan(tbdata['LGZ_Size']/3600.0),tbdata['LGZ_Size'],2*tbdata['Maj']*2.0/3600.0)  ## Find the source size in deg -- gives estimate to filter exclusion catalogue only
+    print("First source is ",tbdata[0][RLF.SSN])
     sizes = []
-    for row in source_names:
-        source_name = row[0]
-        Lra = float(row[2])
-        Ldec = float(row[3])
-        n_comp = float(row[4])
-        
-        if n_comp == float(0.0):
-            n_comp = float(1.0)
+    for r in tbdata:
+        source_name = r[RLF.SSN]
+        Lra = r[RLF.SRA]
+        Ldec = r[RLF.SDEC]
+        n_comp = r[RLF.SASS]
+        isize=r['Size']
+        if n_comp == 0:
+            n_comp = 1
         
         hdu = DefineHDU(source_name)
         flux_array = GetFluxArray(source_name)
         print("Max of flux array is ",np.nanmax(flux_array))
+        print('Excluding components below',isize)
+        cinc,cexc=ffo.select(source_name,Lra,Ldec,isize)
+        print("Lengths of included and excluded comps are:",len(cinc),len(cexc))
+
         try:
-            FMArray = FloodMask(source_name, Lra, Ldec, n_comp, CompTable, hdu, flux_array)
+            _,FMArray = ffo.mask(source_name, cinc, cexc, hdu, None, verbose=True)
+            #FMArray = FloodMask(source_name, Lra, Ldec, n_comp, CompTable, hdu, flux_array)
             print("Max of FMArray is ",np.nanmax(FMArray))
         except:
             print(source_name, 'Flood Fill and Mask Error. Source Not Suitable')
@@ -2456,65 +2429,27 @@ def TotalFluxSelector(catalogue1, CompTable):
             size = FindSizeOfSource(FMArray)
             print(source_name, size)
             sizes.append(size)
-        print("Final size and flux: ",size,row[1])
-    source_names1 = np.column_stack((source_names, sizes))
+        print("Final size and flux: ",size,r['Total_flux'])
+
+    tbdata['Size']=sizes
+    print(tbdata)
     
-    columns = [str(RLF.SSN), str(RLF.STF), str(RLF.SRA), str(RLF.SDEC), str(RLF.SASS), str(RLF.SRAE), str(RLF.SDECE), 'Size']  ## Creates column headings for calling rather than indices
-    table = Table(source_names1, names = columns, dtype = ('S100', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8'))  ## Turns it in to a table
-    print(table)
-    
-    ## The following deals with seperating out the most luminous
-    ## If want to use need to put rel_totflux back in as an input
-    #selection = table['Total_flux'] > rel_totflux*np.nanmax(table['Total_flux'])
-    
-    ## The following deals with finding the bin with the middle sizes (S1)
-    #sub1 = table['LGZ_Size'] > 27
-    #sub2 = table['LGZ_Size'] <= 60
-    #selection = [a & b for a, b in zip(sub1, sub2)]
-    
-    ## The following deals with finding the bin with the largest by size (S2)
-    #selection = table['LGZ_Size'] > 60
-    
-    ## The following deals with finding the bin with the lowest by Total Flux (F1)
-    #selection = table['Total_flux'] <= 10
-    
-    ## The following deals with finding the bin with the middle Total Fluxes (F2)
-    #sub3 = table['Total_flux'] > 10
-    #sub4 = table['Total_flux'] <= 50
-    #selection = [c & d for c, d in zip(sub3, sub4)]
-    
-    ## The following deals with finding the bin with the largest by Total Flux (F3)
-    #selection = table['Total_flux'] > 50
-    
-    ## The following deals with finding the combinations of size and flux
-    
-    #sub7 = [c & d for c, d in zip(sub3, sub4)] ## Unhash F2
-    #sub6 = table['Total_flux'] > 50 ## F3
-    #sub8 = [a & b for a, b in zip(sub1, sub2)] ## Unhash S1
-    sub5 = table['Size'] > 0 ## S2  THE ONE I WANT Need to have values to remove any NaN
-    sub9 = table['Total_flux'] > 0 ## F4  THE ONE I WANT Need to have values to remove any NaN
-    
-    #selection = [e & f for e, f in zip(sub6, sub5)] ## F3S2
-    #selection = [g & h for g, h in zip(sub6, sub8)] ## F3S1
-    #selection = [j & k for j, k in zip(sub7, sub5)] ## F2S2
-    #selection = [l & m for l, m in zip(sub7, sub8)] ## F2S1
-    selection1 = [e & f for e, f in zip(sub9, sub5)] ## F4S2  ## THE ONE I WANT
+    sub5 = tbdata['Size'] > 0 ## S2  THE ONE I WANT Need to have values to remove any NaN
+    sub9 = tbdata['Total_flux'] > 0 ## F4  THE ONE I WANT Need to have values to remove any NaN
+
+    selection1 = sub5 & sub9
     
     ##  Filters for the flux, size and components
     #sub10 = table['Assoc'] == RLC.LGZA
     #selection2 = [n & o for n, o in zip(selection1, sub10)]  
     
-    output = table[selection1]  ##  THE ONE I WANT
-    #output = table  ## doing everything in the folders
-    
-    ##  Need to unhash and two above if want to add a filter for components as well
-    #output = table[selection2] 
-    
-    np.savetxt(str(RLF.TFC), output[str(RLF.SSN), str(RLF.SRA), str(RLF.SDEC), str(RLF.SASS), 'Size', str(RLF.STF), str(RLF.SRAE), str(RLF.SDECE)], fmt='%s', encoding = 'utf-8')  ## Creates a text file with source id, position, number of components, size and flux in it.
+    output = tbdata[selection1]  ##  THE ONE I WANT
+
+    return output
 
 #############################################
 
-def TrialSeries(available_sources, components, R, dphi, CompTable):
+def TrialSeries(available_sources, components, R, dphi, ffo):
 
     """
     Performs ridge finding and output plotting for a list of
@@ -2549,11 +2484,7 @@ def TrialSeries(available_sources, components, R, dphi, CompTable):
     dphi - float,
            1/2 of the value of the cone opening angle
     
-    CompTable - astropy table, shape( , 8),
-                A table containing all the components linked to each 
-                source.  Listing the location RA and DEC, the ellipse
-                Maj and Min axes and the angle of rotation.  As well as
-                the Total Flux of the component.
+    ffo - Flood object
     
     Constants
     ---------
@@ -2611,18 +2542,18 @@ def TrialSeries(available_sources, components, R, dphi, CompTable):
     # To get a sample of a certain size (ie [0::n] gives every nth source)
     for source in available_sources[RLC.Start::RLC.Step]:
         
-        source_name = source[0]
-        n_comp = source[3].astype(float)
-        Lra = source[4].astype(float)
-        Ldec = source[5].astype(float)
-        lmsize = source[6].astype(float)
+        source_name = source[RLF.SSN]
+        n_comp = source[RLF.SASS]
+        Lra = source[RLF.SRA]
+        Ldec = source[RLF.SDEC]
+        lmsize = source['Size']
         flux_array = GetCutoutArray(source_name)
         hdu = DefineCutoutHDU(source_name)
         
         optical_pos = (float(lmsize), float(lmsize))
         
-        if n_comp == 0.0:
-            n_comp = 1.0
+        if n_comp == 0:
+            n_comp = 1
         
         print('-------------------------------------------')
         print('Source Number %s' %source_counter)
@@ -2634,7 +2565,10 @@ def TrialSeries(available_sources, components, R, dphi, CompTable):
             print(str(source_name)+' Flood Fill and Masking')
         try:
             #flooded_array = FloodFill(cat_pos, CompTable, n_comp, hdu, flux_array, optical_pos, source_name)
-            FandM_array = FloodMask(source_name, Lra, Ldec, n_comp, CompTable, hdu, flux_array)
+            #FandM_array = FloodMask(source_name, Lra, Ldec, n_comp, CompTable, hdu, flux_array)
+            cinc,cexc=ffo.select(source_name,Lra,Ldec,lmsize/3600.0)
+            print('Lengths of included, excluded tables are',len(cinc),len(cexc))
+            _,FandM_array=ffo.mask(source_name,cinc,cexc,hdu,None,verbose=True)
         except IndexError:
             
             y, x = np.mgrid[slice((0),(flux_array.shape[0]),1), slice((0),(flux_array.shape[1]),1)]
@@ -2679,7 +2613,7 @@ def TrialSeries(available_sources, components, R, dphi, CompTable):
             if RLC.debug == True:
                 print(str(source_name)+' Initial Point')
             
-            init_point = InitPoint(area_fluxes, CompTable, n_comp, source_name, hdu)       
+            init_point = InitPoint(area_fluxes, ffo.t, n_comp, source_name, hdu)       
             
     
             # find both ridges and angular directions at each step
@@ -2687,7 +2621,7 @@ def TrialSeries(available_sources, components, R, dphi, CompTable):
                 print(str(source_name)+' Ridgeline')
             try:
                 ridge1, phi_val1, Rlen1, ridge2, phi_val2, Rlen2, Error = FindRidges(area_fluxes, \
-                                    init_point, R, dphi, lmsize, CompTable, n_comp, source_name, hdu)
+                                    init_point, R, dphi, lmsize, ffo.t, n_comp, source_name, hdu)
                     
             except (ValueError, UnboundLocalError):#,TypeError, 
             
