@@ -9,6 +9,8 @@
 
 # Imports
 
+from __future__ import print_function
+
 import numpy as np
 import sys
 import os
@@ -35,7 +37,6 @@ def get_fits(fra,fdec,fsource,fsize):
     newsize=2.5*fsize/3600.0
 
     lm=LofarMaps()
-    print fra,fdec
     mosname=lm.find(fra,fdec)
     filename=os.environ['IMAGEDIR']+'/'+mosname
     hdu=extract_subim(filename,fra,fdec,newsize)
@@ -43,7 +44,7 @@ def get_fits(fra,fdec,fsource,fsize):
         hdu.writeto('fits/'+name+'.fits',overwrite=True)
         flag=0
     else:
-        print 'Cutout failed for '+str(fsource)
+        print('Cutout failed for '+str(fsource))
         flag=1
 
     return flag
@@ -107,15 +108,15 @@ for row in sources:
             peak=flux
             dyncut=50.0
             ratio=peak/dyncut
-            print peak,rms,ratio
+            print(peak,rms,ratio)
             if rms<ratio:
-                print "rms < ratio"
+                print("rms < ratio")
                 thres=(1e-3)*ratio
                 thres2=ratio
                 thres3=ratio
             else:
-                print "rms > ratio"
-                print rms
+                print("rms > ratio")
+                print(rms)
                 thres=(1e-3)*4.0*rms
 
             d[d<thres]=np.nan
