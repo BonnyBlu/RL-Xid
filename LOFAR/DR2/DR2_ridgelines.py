@@ -31,21 +31,25 @@ ffo=Flood(CompTable)
 
 #if exists(RLF.TFC) == False:
 
-print('Please wait output will show below.')
+print('Measuring sizes')
 start_time = time.time()
 available_sources=TotalFluxSelector(RLF.LofCat, ffo)
-print('Time taken to calculate sizes = ' + str((time.time()-start_time)/(60*60)))
+print('Time taken to calculate sizes = ' + str((time.time()-start_time)/(60*60)),'h')
     
 #available_sources = GetAvailableSources(str(RLF.TFC))
 print('Number of sources in Sample = ',len(available_sources))
-    
-#CreateCutouts(available_sources)
-#print('CutOuts created.')
+
+available_sources.write(RLF.TFC.replace('.txt','.fits'),overwrite=True)
+
+print('Creating cutouts')
+start_time = time.time()
+CreateCutouts(available_sources)
+print('Time taken to make cutouts = ' + str((time.time()-start_time)/(60*60)),'h')
 
 print('Starting Ridgeline drawing process.')
 start_time = time.time()
-TrialSeries(available_sources, str(RLF.CompCat), R, dphi, ffo)
-print('Time taken for Ridgelines to draw (Hours) = ' + str((time.time()-start_time)/(60*60)))
+TrialSeries(available_sources, RLF.CompCat, R, dphi, ffo)
+print('Time taken for Ridgelines to draw = ' + str((time.time()-start_time)/(60*60)),'h')
 resetwarnings()
     
 '''

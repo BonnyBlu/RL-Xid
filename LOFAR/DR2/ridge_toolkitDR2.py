@@ -27,7 +27,7 @@ from skimage.morphology import erosion
 from skimage.feature import peak_local_max
 from skimage.filters import threshold_minimum
 import copy
-from sizeflux_tools import Flood,length3
+from sizeflux_tools import Flood,length3,Mask
 
 #############################################
 
@@ -282,13 +282,13 @@ def CreateCutouts(available_sources):
     for source in available_sources[RLC.Start::RLC.Step]:
         
         source_name = source['Source_Name']
-        centre_pos = (source['RA'],source['DEC'])
-        lmsize = source['Size']
+        centre_pos = SkyCoord(source['RA']*u.deg,source['DEC']*u.deg,frame='icrs')
+        asize = source['Size']
+        print('Making cutout for source',source_name,'with size',asize,'arcsec')
         hdu = DefineHDU(source_name)
         data = hdu[0].data
-        
-        size = (2 * float(lmsize), 2 * float(lmsize))  # pixels
-        
+        lmsize=int(asize/3600.0/hdu[0].header['CDELT2']) # pixels
+        size = (2 * lmsize, 2 * lmsize)
         wcs = WCS(hdu[0].header)  ## Keep world coordinate system
         cutout = Cutout2D(data, centre_pos, size, wcs = wcs)
         hdu[0].data = cutout.data
@@ -296,7 +296,7 @@ def CreateCutouts(available_sources):
         hdu[0].writeto(str(RLF.fitsfile) + source_name + '-cutout.fits', overwrite = True)
         
         flux_array = GetFluxArray(source_name)
-        cutout2 = Cutout2D(flux_array, centre_pos, size)
+        cutout2 = Cutout2D(flux_array, centre_pos, size, wcs=wcs)
         np.save(str(RLF.npyfile) + source_name + '-cutout.npy', cutout2.data)
         
 
@@ -613,8 +613,7 @@ def FindRidges(area_fluxes, init_point, R, dphi, lmsize, \
         
         if (np.isnan(phi_val1) and np.isnan(phi_val2)):
 
-            ridge1 = np.full_like(init_point, np.nan)
-            ridge2 = np.full_like(init_point, np.nan)
+            ridge1 = ridge2 = np.array([np.nan, np.nan])
             Rlen1 = np.array([np.nan, np.nan])
             Rlen2 = np.array([np.nan, np.nan])
 
@@ -627,8 +626,7 @@ def FindRidges(area_fluxes, init_point, R, dphi, lmsize, \
             
             if type(larger_cone1) == np.ndarray or type(larger_cone2) == np.ndarray:
 
-                ridge1 = np.full_like(init_point, np.nan)
-                ridge2 = np.full_like(init_point, np.nan)
+                ridge1 = ridge2 = np.array([np.nan, np.nan])
                 Error = 'Unable_to_Find_Initial_Directions'
                 Rlen1 = np.array([np.nan, np.nan])
                 Rlen2 = np.array([np.nan, np.nan])
@@ -654,8 +652,8 @@ def FindRidges(area_fluxes, init_point, R, dphi, lmsize, \
     
                     print('Unable to find the first ridge point. '\
                           'Further source analysis is aborted.')
-                    ridge1 = np.full_like(init_point, np.nan)
-                    ridge2 = np.full_like(init_point, np.nan)
+                    ridge1 = ridge2 = np.array([np.nan,np.nan])
+                    #ridge2 = np.full_like(init_point, np.nan)
                     Error = 'Unable_to_Find_First_Ridge_Point'
                     Rlen1 = np.array([np.nan, np.nan])
                     Rlen2 = np.array([np.nan, np.nan])                
@@ -1225,7 +1223,7 @@ def GetFirstPoint(area_fluxes, init_point, cone, chain_mask, R):
 
     if safety_stop == True:
 
-        new_point = np.full_like(init_point, np.nan)
+        new_point = np.array([np.nan, np.nan])
 
     else:
         cone_phislice = np.ma.masked_array(phi, mask=slice_mask, \
@@ -1761,9 +1759,8 @@ def InitAngleRanges(theta1, theta2, dphi):
 
     if np.isnan(theta1) and np.isnan(theta2):
         larger, smaller = np.nan, np.nan
-        range_l = np.full(2, np.nan)
-        range_s = np.full(2, np.nan)
-        print('No initial directions were found.' \
+        range_l = range_s = np.array([np.nan,np.nan])
+        print('No initial directions were found. ' \
                 'Further source analysis is aborted.')
 
     else:
@@ -1891,8 +1888,7 @@ def InitCones(area_fluxes, init_point, dphi, lmsize, CompTable, \
 
         if np.isnan(larger) and np.isnan(smaller):
 
-            cone_l = np.full_like(area_fluxes, np.nan)
-            cone_s = np.full_like(area_fluxes, np.nan)
+            cone_l = cone_s = np.array([np.nan, np.nan])
 
         else:
             r, phi = PolarCoordinates(area_fluxes, init_point)
@@ -1927,8 +1923,7 @@ def InitCones(area_fluxes, init_point, dphi, lmsize, CompTable, \
         Error = 'Initial_ID_Outside_Region. Broken_Cutout'
 
         larger, smaller = np.nan, np.nan
-        cone_l = np.full_like(area_fluxes, np.nan)
-        cone_s = np.full_like(area_fluxes, np.nan)
+        cone_l = cone_s = np.array([np.nan,np.nan])
 
     return larger, smaller, cone_l, cone_s, init_point, Error
 
@@ -2058,113 +2053,36 @@ def InitPoint(area_fluxes, CompTable, n_comp, source_name, hdu):
 
     """
 
-    # Optical_pos is currently set as the LOFAR position given in the catalogue
-    # Not needed if looking for the highest flux to draw from
-#    
-#    init_point = np.empty(2)
-#
-#     #Find the maximum flux point in the cutout to use as the starting point
-#    maxflux = np.unravel_index(np.argmax(np.ma.masked_invalid(area_fluxes)), area_fluxes.shape)
-#    init_point[0] = maxflux[1]
-#    init_point[1] = maxflux[0]
-#
-#  
-#     #The Original five pixels from the start point code    
-#    if maxima.ndim == 1:
-#        r_x = optical_pos[0] - maxima[0]
-#        r_y = optical_pos[1] - maxima[1]
-#        r = sqrt(r_x**2 + r_y**2)
-#
-#        if r <= 5.:
-#
-#            init_point[0] = maxima[0]
-#            init_point[1] = maxima[1]
-#
-#        else:
-#            init_point = optical_pos
-#
-#    else:
-#        r_x = optical_pos[0] - maxima[:,1]
-#        r_y = optical_pos[1] - maxima[:,0]
-#        r = sqrt(np.power(r_x, 2) + np.power(r_y, 2))
-#        
-#        
-#        if np.amin(r) <= float(lmsize): #5:   # This finds the closest maxima within the cutout
-#
-#            init_point[0] = maxima[np.argmin(r), 1]
-#            init_point[1] = maxima[np.argmin(r), 0]
-#            
-#        else:
-#            init_point = optical_pos
-
 
 ## For finding the maximum flux value in the component ellipses and starting the RL from there.        
-    try: 
-        n_comp=int(float(n_comp))  ## This might not be necessary so could take out at a later date.
-    except ValueError:
-        n_comp=1
-            
-    ell_ra=np.zeros(n_comp)
-    ell_dec=np.zeros(n_comp)
-    ell_maj=np.zeros(n_comp)
-    ell_min=np.zeros(n_comp)
-    ell_pa=np.zeros(n_comp)
-    ell_flux=np.zeros(n_comp)
-        
-    compcounter = 0
 
-    regwrite=open(RLF.tmpdir+'temp3.reg','w')  ## Creates the file for storing the info about excluded regions
-    regwrite.write('# Region file format: DS9 version 4.1\n'+'global color=green dashlist=8 3 width=1 font="helvetica 10 normal roman" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1\n'+'fk5\n')
-
+    sizey,sizex=area_fluxes.shape
+    w=WCS(hdu[0].header)
+    m=Mask((sizey,sizex)) # sizeflux mask object
+    
     for row in CompTable:
         source3 = row[0]
-        comp_ra = float(row[2])
-        comp_dec = float(row[3])
-        comp_flux = float(row[4])
-        comp_maj = float(row[5])
-        comp_min = float(row[6])
-        comp_pa = float(row[7])
+        if source3==source_name:
+            comp_ra = float(row[2])
+            comp_dec = float(row[3])
+            comp_flux = float(row[4])
+            comp_maj = float(row[5])
+            comp_min = float(row[6])
+            comp_pa = float(row[7])
             
+            (xp,yp)=w.wcs_world2pix(comp_ra,comp_dec,1)
+            cdelt=hdu[0].header['CDELT2']
+            majpix=2.0*(comp_maj/3600.0)/cdelt
+            minpix=2.0*(comp_min/3600.0)/cdelt
+            m.AddMaskEllipse(xp,yp,majpix,minpix,comp_pa+90.0)
             
-        if (source_name == source3):
-                         
-            if n_comp>1:
-                ell_ra[compcounter]=comp_ra
-                ell_dec[compcounter]=comp_dec
-                ell_flux[compcounter]=comp_flux
-                ell_maj[compcounter]=comp_maj
-                ell_min[compcounter]=comp_min
-                ell_pa[compcounter]=comp_pa
-                    
-                regwrite.write('ellipse('+str(comp_ra)+','+str(comp_dec)+','+str(comp_maj)+'",'+str(comp_min)+'",'+str((float(comp_pa)+90.0))+')\n')
-                    
-                compcounter+=1
-                    
-            else:
-                ell_ra=comp_ra
-                ell_dec=comp_dec
-                ell_flux=comp_flux
-                ell_maj=comp_maj
-                ell_min=comp_min
-                ell_pa=comp_pa
+    ellmask = m.narray
+    MaxFluxArray = np.ma.masked_array(area_fluxes, ellmask==1)
 
-                regwrite.write('ellipse('+str(comp_ra)+','+str(comp_dec)+','+str(comp_maj)+'",'+str(comp_min)+'",'+str((float(comp_pa)+90.0))+')\n')
-                
-    regwrite.close()
-        
-    ellipses = pyregion.open(RLF.tmpdir+'temp3.reg').as_imagecoord(hdu[0].header)
-    #print(ellipses)
-        
-    ellmask = ellipses.get_mask(hdu = hdu[0])
-    MaxFluxArray = np.ma.masked_array(area_fluxes, ~ellmask)
-
-    init_point = np.empty(2)  ## Have to open up an empty one and flip around as the tuple doesn't work
     # Find the maximum flux point in the cutout to use as the starting point
     maxflux = np.unravel_index(np.argmax(np.ma.masked_invalid(MaxFluxArray)), area_fluxes.shape)
-    init_point[0] = maxflux[1]
-    init_point[1] = maxflux[0]    
 
-    return init_point
+    return np.array([maxflux[1],maxflux[0]])
 
 #############################################
 
@@ -2547,10 +2465,10 @@ def TrialSeries(available_sources, components, R, dphi, ffo):
         Lra = source[RLF.SRA]
         Ldec = source[RLF.SDEC]
         lmsize = source['Size']
-        #flux_array = GetCutoutArray(source_name)
-        #hdu = DefineCutoutHDU(source_name)
-        hdu = DefineHDU(source_name)
-        flux_array = GetFluxArray(source_name)
+        flux_array = GetCutoutArray(source_name)
+        hdu = DefineCutoutHDU(source_name)
+        #hdu = DefineHDU(source_name)
+        #flux_array = GetFluxArray(source_name)
         hdu[0].data=flux_array # otherwise not passed to mask!
         
         optical_pos = (float(lmsize), float(lmsize))
@@ -2712,7 +2630,6 @@ def TrialSeries(available_sources, components, R, dphi, ffo):
     
                 # save the output as a .txt file of the form:
                 # x_coord y_coord angle_dir (3 columns, space separated)
-    
                         file1 = np.column_stack((ridge1[:,0], ridge1[:,1], phi_val1, Rlen1))
                         file2 = np.column_stack((ridge2[:,0], ridge2[:,1], phi_val2, Rlen2))
                         np.savetxt(RLF.R1 %source_name, file1, delimiter=' ')
