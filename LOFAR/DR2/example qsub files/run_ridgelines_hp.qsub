@@ -1,10 +1,9 @@
 #!/bin/bash
 
-#PBS -N DR2_LR
+#PBS -N DR2_ridgelines_hp
 #PBS -l nodes=1:ppn=1
-#PBS -l walltime=100:00:00
-#Pbs -m abe
-#PBS -l pmem=10g
+#PBS -l walltime=24:00:00
+#PBS -l pmem=10G
 
 echo ------------------------------------------------------
 echo -n 'Job is running on node '; cat $PBS_NODEFILE
@@ -19,8 +18,7 @@ echo ------------------------------------------------------
 eval `/usr/bin/modulecmd bash load python3`
 export PYTHONPATH=/home/mjh/git/lotss-catalogue/utils:/soft/python3/usr/local/lib64/python3.6/site-packages
 
-FIL=rl${PBS_ARRAYID}
+FIL=hp_${PBS_ARRAYID}
 export RLDIR=${RDIR}/$FIL
 
-
-python3.6 ~/git/RL-Xid/LOFAR/DR2/DR2_LR.py
+python3.6 ~/git/RL-Xid/LOFAR/DR2/DR2_ridgelines.py

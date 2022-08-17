@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#PBS -N DR2_LR
+#PBS -N DR2_LR_hp
 #PBS -l nodes=1:ppn=1
 #PBS -l walltime=100:00:00
 #Pbs -m abe
@@ -19,7 +19,7 @@ echo ------------------------------------------------------
 eval `/usr/bin/modulecmd bash load python3`
 export PYTHONPATH=/home/mjh/git/lotss-catalogue/utils:/soft/python3/usr/local/lib64/python3.6/site-packages
 
-FIL=rl${PBS_ARRAYID}
+FIL=hp_${PBS_ARRAYID}
 export RLDIR=${RDIR}/$FIL
 
 

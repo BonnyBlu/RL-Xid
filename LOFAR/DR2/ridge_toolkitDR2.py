@@ -284,7 +284,7 @@ def CreateCutouts(available_sources):
         source_name = source['Source_Name']
         centre_pos = SkyCoord(source['RA']*u.deg,source['DEC']*u.deg,frame='icrs')
         lmsize = source['Size']
-        print('Making cutout for source',source_name,'with size',asize,'pixels')
+        print('Making cutout for source',source_name,'with size',lmsize,'pixels')
         hdu = DefineHDU(source_name)
         data = hdu[0].data
         size = (2 * lmsize, 2 * lmsize)
@@ -719,221 +719,6 @@ def FindRidges(area_fluxes, init_point, R, dphi, lmsize, \
 
 #############################################
 
-def FloodFill(cat_pos, CompTable, n_comp, hdu, flux_array, centre_pos, source_name):
-
-    """
-    This function finds the nearest unassociated components and finds flux
-    around the associated components with in a short distance.  It masks
-    the far unassociated flux and allows the near unassociated flux to stay
-    visible hence leaving just the source flux.
-    
-    Parameters
-    ----------
-    
-    cat_pos - 1D array, shape(2,)
-              LOFAR catalogue position of source in arcsec
-            
-    CompTable - astropy table, shape( , 8),
-                A table containing all the components linked to each 
-                source.  Listing the location RA and DEC, the ellipse
-                Maj and Min axes and the angle of rotation.  As well as
-                the Total Flux of the component.
-    
-    n_comp - int,
-             The number of LOFAR Galaxy Zoo associated components
-    
-    hdu - an opened .fits file
-    
-    flux_array - 2D array,
-                 array of pixel fluxes loaded from file
-    
-    centre_pos - 1D array, shape(2,)
-                 centre position of the cutout based on the LOFAR catalogue
-                 position in pixels
-                  
-    source_name - str,
-                  source name used to identify a .fits file
-    
-    Constants
-    ---------
-    
-    rdel - float,
-           the equivalent pixel value to RA in a FITS file, set value
-    
-    ddel - float,
-           the equivalent pixel value to DEC in a FITS file, set value
-                  
-    Returns
-    -------
-    
-    flood_array - 2D array,
-                  masked array covering the unassociated flux and leaving
-                  the flux that might be associated to the source.
-    
-    """
-    
-    
-    #Preliminary tasks
-    #copy array for mask creation
-    
-    mask_array = np.copy(flux_array)
-    
-    #xra = hdu[0].header['CRPIX1']
-    #yra = hdu[0].header['CRPIX2']
-    (xra, yra) = centre_pos
-    #data = hdu[0].data
-    ymax2,xmax2 = flux_array.shape
-    xr2 = np.array(range(xmax2))
-    yr2 = np.array(range(ymax2))
-    xg2,yg2 = np.meshgrid(xr2,yr2)
-    xmin2,xmax2 = xg2.min(),xg2.max()
-    ymin2,ymax2 = yg2.min(),yg2.max()
-    
-    coords_cat = SkyCoord(ra=float(cat_pos[0])*u.degree, dec=float(cat_pos[1])*u.degree, frame='fk5')
-    
-    #Create temporary ds9 region file to use as initial mask
-    regwrite=open(RLF.tmpdir+'temp4.reg','w')
-    regwrite.write('# Region file format: DS9 version 4.1\n'+'global color=green dashlist=8 3 width=1 font="helvetica 10 normal roman" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1\n'+'fk5\n')
-
-    #Define auxiliary array filled with "1", which we will use to create the masks, and auxiliary data array to fill in the ellipses 
-    sizey,sizex = flux_array.shape
-    one_mask=1*np.isfinite(np.zeros((sizey,sizex)))
-    
-    
-    #Case for single component
-    
-    try: 
-        n_comp = int(float(n_comp))  ## This might not be necessary so could take out at a later date.
-    except ValueError:
-        n_comp = 1
-        
-    ell_ra=np.zeros(n_comp)
-    ell_dec=np.zeros(n_comp)
-    ell_maj=np.zeros(n_comp)
-    ell_min=np.zeros(n_comp)
-    ell_pa=np.zeros(n_comp)
-    ell_flux=np.zeros(n_comp)
-        
-    compcounter = 0
-    
-    for row in CompTable:
-        source3 = row[0]
-        comp_ra = float(row[2])
-        comp_dec = float(row[3])
-        comp_flux = float(row[4])
-        comp_maj = float(row[5])
-        comp_min = float(row[6])
-        comp_pa = float(row[7])
-            
-            
-        if (source_name == source3):
-                         
-            if n_comp > 1:
-                ell_ra[compcounter]=comp_ra
-                ell_dec[compcounter]=comp_dec
-                ell_flux[compcounter]=comp_flux
-                ell_maj[compcounter]=comp_maj
-                ell_min[compcounter]=comp_min
-                ell_pa[compcounter]=comp_pa
-                
-                compcounter+=1
-                    
-            else:
-                ell_ra=comp_ra
-                ell_dec=comp_dec
-                ell_flux=comp_flux
-                ell_maj=comp_maj
-                ell_min=comp_min
-                ell_pa=comp_pa
-    
-    if n_comp == 1:
-
-        #Write the ellipse to the ds9 region file 
-        regwrite.write('ellipse('+str(ell_ra)+','+str(ell_dec)+','+str(ell_maj)+'",'+str(ell_min)+'",'+str(float(ell_pa)+90.0)+')')
-        regwrite.close()
-        
-        #In the auxiliary data array, turn to an arbitrary non-zero value the pixels inside the ellipse
-        region=pyregion.open(RLF.tmpdir+'temp4.reg').as_imagecoord(hdu[0].header)
-        mask=region.get_mask(hdu=hdu[0])
-        mask_array[mask==1]=0.02
-
-        #Transform the data array into boolean, then binary values
-        data_bin=1*(np.isfinite(mask_array))
-
-        #Label the data array: this method will assign a numerical label to every island of "1" in our binary data array; we want +-style connectivity
-        data_label=label(data_bin, connectivity=1)    
-
-        #Calculate the various distances in pixels; we have imported the source coordinates from the main program
-        coords_ell=SkyCoord(ra=float(ell_ra)*u.degree, dec=float(ell_dec)*u.degree, frame='fk5')
-        ell_dist_x,ell_dist_y=coords_cat.spherical_offsets_to(coords_ell)
-        ell_dx=float(ell_dist_x.deg/RLC.rdel)
-        ell_dy=float(ell_dist_y.deg/RLC.ddel)
-        pix_ell_ra=int(xra+int(ell_dx)-(xmin2-1)) #needs to be int to be evaluated later
-        pix_ell_dec=int(yra+int(ell_dy)-(ymin2-1)) #needs to be int to be evaluated later
-
-        #Identify the label that corresponds to the island generated from the elliptical region
-        value=data_label[pix_ell_dec,pix_ell_ra]
-        
-        #The output mask will only contain "1" in the areas corresponding to the island of interest
-        temp_mask=(np.ma.masked_where(data_label!=value,one_mask))
-        temp_mask[temp_mask!=1]=0
-        flooded_mask=temp_mask
-        
-        
-    #Case for multiple components
-        
-    else:
-
-        #Write the ellipses to the ds9 region file        
-        for n in range(n_comp): 
-            regwrite.write('ellipse('+str(ell_ra[n])+','+str(ell_dec[n])+','+str(ell_maj[n])+'",'+str(ell_min[n])+'",'+str((float(ell_pa[n])+90.0))+')\n')
-        regwrite.close()
-        
-        #In the data array, turn to an arbitrary non-zero value the pixels inside the ellipse
-        region=pyregion.open(RLF.tmpdir+'temp4.reg').as_imagecoord(hdu[0].header)
-        mask=region.get_mask(hdu=hdu[0])
-        mask_array[mask==1]=0.02
-
-        #Transform the data array into boolean, then binary values
-        data_bin=1*(np.isfinite(mask_array))
-
-        #Label the data array: this method will assign a numerical label to every island of "1" in our binary data array; we want 8-style connectivity
-        data_label=label(data_bin, connectivity=2)    
-
-        #Create an array to store the labels (one for each region-island)
-        multi_labels=np.zeros(n_comp)
-
-        #Initialise the cumulative mask
-        multi_mask=np.zeros((sizey,sizex))
-
-        #Main loop (see comments above for individual step descriptions)
-        for i in range (n_comp):
-            coords_ell=SkyCoord(ra=float(ell_ra[i])*u.degree, dec=float(ell_dec[i])*u.degree, frame='fk5')
-            ell_dist_x,ell_dist_y=coords_cat.spherical_offsets_to(coords_ell)
-            ell_dx=float(ell_dist_x.deg/RLC.rdel)
-            ell_dy=float(ell_dist_y.deg/RLC.ddel)
-            pix_ell_ra=int(xra+int(ell_dx)-(xmin2-1))
-            pix_ell_dec=int(yra+int(ell_dy)-(ymin2-1))
-           
-            value=data_label[pix_ell_dec,pix_ell_ra]
-            
-            #We don't want to add to the mask if the label island is connected to a previous one (overlapping regions/data)
-            if value in multi_labels:
-                multi_labels[i]=value
-            else:        
-                multi_labels[i]=value
-                #Because of how masked arrays work, we need to explicitly set to zero the areas of the array we want masked out... we need a temporary masked array for the intermediate step
-                temp_mask=(np.ma.masked_where(data_label!=value,one_mask))
-                temp_mask[temp_mask!=1]=0
-                #As we have used a 1/0 matrix as a basis, iteratively adding the island masks together will give us the full mask we need 
-                multi_mask=(multi_mask+temp_mask)
-
-        #The output mask will only contain "1" in the areas corresponding to the islands of interest
-        flooded_mask=multi_mask
-
-    flooded_array = np.ma.array(flux_array, mask = ~np.ma.make_mask(flooded_mask))
-        
-    return flooded_array
 
 #############################################
 
@@ -2324,8 +2109,7 @@ def TotalFluxSelector(catalogue1, ffo):
         flux_array = GetFluxArray(source_name)
         print("Max of flux array is ",np.nanmax(flux_array))
         hdu[0].data=flux_array # otherwise not passed to mask!
-        cinc,cexc=ffo.select(source_name,Lra,Ldec,isize,verbose=True)
-        #print("Lengths of included and excluded comps are:",len(cinc),len(cexc))
+        cinc,cexc=ffo.select(source_name,Lra,Ldec,isize,verbose=False)
 
         try:
             _,FMArray = ffo.mask(source_name, cinc, cexc, hdu, None, verbose=True)
@@ -2487,7 +2271,7 @@ def TrialSeries(available_sources, components, R, dphi, ffo):
             #FandM_array = FloodMask(source_name, Lra, Ldec, n_comp, CompTable, hdu, flux_array)
             cinc,cexc=ffo.select(source_name,Lra,Ldec,lmsize/3600.0)
             #print('Lengths of included, excluded tables are',len(cinc),len(cexc))
-            _,FandM_array=ffo.mask(source_name,cinc,cexc,hdu,None,verbose=True)
+            _,FandM_array=ffo.mask(source_name,cinc,cexc,hdu,None,verbose=False)
         except IndexError:
             
             y, x = np.mgrid[slice((0),(flux_array.shape[0]),1), slice((0),(flux_array.shape[1]),1)]
