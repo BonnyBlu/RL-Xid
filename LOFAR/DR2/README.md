@@ -16,11 +16,12 @@ To run the full ridgeline ID process on a new sky area:
 2. Run `healpix_batch.py` with the radio catalogue, optical catalogue
    and component catalogue as arguments. This filters the catalogues
    and then batches then appropriately for parallel processing. It
-   will generate `N` directories with names `hp_0`, `hp_1`...
+   will generate `N` directories with names `hp_0`, `hp_1`... 
 3. Run DR2_setup.py in each batch subdirectory, using the
    `run_setup_hp.qsub` file. Use the `-v RDIR` option to specify the
-   root directory. This creates all the subdirectories needed and
-   generates cutouts/npy arrays ready for input to RL-XiD.
+   root directory and the `-t` option to specify the range up to the
+   largest numbered `hp` directory. This creates all the subdirectories
+   needed and generates cutouts/npy arrays ready for input to RL-XiD.
 4. Run `DR2_ridgelines.py` on all the batches via an appropriate qsub
    file (e.g. `run_ridgelines_hp.qsub`) to generate the ridgelines.
 5. Run DR2_LR.py on all the batches via appropriate qsub file
@@ -40,7 +41,9 @@ The `allhosts.fits` file is filtered to only include sources where the host has 
 
 Finally the `randhosts.fits` file is a random subset of the `allhosts` file containing 300 objects to enable easy visual checking. 
 
-Example run (assumes relevant packages in git):
+This depends on the `dr2_catalogue` repository and `sizeflux_tools.py` must be on your Pythonpath.
+
+Example run (assumes relevant packages in your `git` directory):
 
 ```
 python ~/git/lotss-catalogue/dr2_catalogue/make_ridgeline_input.py
