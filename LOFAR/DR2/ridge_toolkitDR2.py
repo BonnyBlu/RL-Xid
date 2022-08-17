@@ -283,11 +283,10 @@ def CreateCutouts(available_sources):
         
         source_name = source['Source_Name']
         centre_pos = SkyCoord(source['RA']*u.deg,source['DEC']*u.deg,frame='icrs')
-        asize = source['Size']
-        print('Making cutout for source',source_name,'with size',asize,'arcsec')
+        lmsize = source['Size']
+        print('Making cutout for source',source_name,'with size',asize,'pixels')
         hdu = DefineHDU(source_name)
         data = hdu[0].data
-        lmsize=int(asize/3600.0/hdu[0].header['CDELT2']) # pixels
         size = (2 * lmsize, 2 * lmsize)
         wcs = WCS(hdu[0].header)  ## Keep world coordinate system
         cutout = Cutout2D(data, centre_pos, size, wcs = wcs)
@@ -1416,23 +1415,17 @@ def GetProblematicSources(problem_filename):
     Returns
     -------
     
-    problem_sources - a list of sources names    
+    problem_sources - a list of source names    
     
     """
     
-    problem_list = open(problem_filename, 'r')
-    problem_sources = np.empty(2)
-    
+    problem_list = open(problem_filename, 'r').readlines()
+    problem_sources=[]
     for psource in problem_list:
         psource_info = psource.strip()
         pinfo_cols = psource_info.split()
-        psource_name = pinfo_cols[0].strip("''")
-        error_type = pinfo_cols[1].strip("''")
-        
-        psource_summary = np.array([psource_name, error_type])
-        problem_sources = np.vstack((problem_sources, psource_summary))
-        
-    problem_sources = problem_sources[2:,:]
+        problem_sources.append(pinfo_cols[0].strip("''"))
+
     return problem_sources
 
 ############################################# 
@@ -2332,7 +2325,7 @@ def TotalFluxSelector(catalogue1, ffo):
         print("Max of flux array is ",np.nanmax(flux_array))
         hdu[0].data=flux_array # otherwise not passed to mask!
         cinc,cexc=ffo.select(source_name,Lra,Ldec,isize,verbose=True)
-        print("Lengths of included and excluded comps are:",len(cinc),len(cexc))
+        #print("Lengths of included and excluded comps are:",len(cinc),len(cexc))
 
         try:
             _,FMArray = ffo.mask(source_name, cinc, cexc, hdu, None, verbose=True)
@@ -2351,6 +2344,11 @@ def TotalFluxSelector(catalogue1, ffo):
 
     tbdata['Size']=sizes
     print(tbdata)
+
+    # Note that although a Total_flux criterion is retained flux is
+    # *not measured* in the above and by definition will always be >
+    # 0. So this boils down to whether the preliminary mask can
+    # measure a size. We could measure total flux but don't gain much...
     
     sub5 = tbdata['Size'] > 0 ## S2  THE ONE I WANT Need to have values to remove any NaN
     sub9 = tbdata['Total_flux'] > 0 ## F4  THE ONE I WANT Need to have values to remove any NaN
@@ -2488,7 +2486,7 @@ def TrialSeries(available_sources, components, R, dphi, ffo):
             #flooded_array = FloodFill(cat_pos, CompTable, n_comp, hdu, flux_array, optical_pos, source_name)
             #FandM_array = FloodMask(source_name, Lra, Ldec, n_comp, CompTable, hdu, flux_array)
             cinc,cexc=ffo.select(source_name,Lra,Ldec,lmsize/3600.0)
-            print('Lengths of included, excluded tables are',len(cinc),len(cexc))
+            #print('Lengths of included, excluded tables are',len(cinc),len(cexc))
             _,FandM_array=ffo.mask(source_name,cinc,cexc,hdu,None,verbose=True)
         except IndexError:
             
