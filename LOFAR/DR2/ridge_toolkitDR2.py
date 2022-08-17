@@ -2112,7 +2112,7 @@ def TotalFluxSelector(catalogue1, ffo):
         cinc,cexc=ffo.select(source_name,Lra,Ldec,isize,verbose=False)
 
         try:
-            _,FMArray = ffo.mask(source_name, cinc, cexc, hdu, None, verbose=True)
+            _,FMArray = ffo.mask(source_name, cinc, cexc, hdu, None, verbose=False)
             #FMArray = FloodMask(source_name, Lra, Ldec, n_comp, CompTable, hdu, flux_array)
             print("Max of FMArray is ",np.nanmax(FMArray))
         except:
