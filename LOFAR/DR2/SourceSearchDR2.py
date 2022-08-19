@@ -853,15 +853,7 @@ def CreateRDistTable(source, available_sources):
     source_list - list,
                   a list of the sources that succesfully drew a ridgeline.
 
-    available_sources - 2D array, shape(x, 14), dtype='str'
-                        array containing x source names and LOFAR catalogue
-                        locations in pixel values, number of components
-                        associated with source and LOFAR catalogue locations
-                        as RA and DEC, the length of the source in pixels
-                        and the total flux for all files available in a 
-                        given directory. The host location in pixels, the
-                        error on the RA and DEC of the host location, and
-                        the RA and DEC of the host.
+    available_sources - astropy table
 
     Return
     ------
@@ -1804,7 +1796,7 @@ def LengthOnLine(rllength, points, posindex, Ix, Iy):
 
 #############################################
 
-def LikelihoodRatios(available_sources):
+def LikelihoodRatios(available_sources,debug=False):
     
     """
     Calculates the likelihood ratio of the n closest sources as determined by
@@ -1817,34 +1809,27 @@ def LikelihoodRatios(available_sources):
     Parameters
     ----------
     
-    source_list - list,
-                  a list of the sources that succesfully drew a ridgeline.         
-
-    available_sources - 2D array, shape(x, 14), dtype='str'
-                        array containing x source names and LOFAR catalogue
-                        locations in pixel values, number of components
-                        associated with source and LOFAR catalogue locations
-                        as RA and DEC, the length of the source in pixels
-                        and the total flux for all files available in a 
-                        given directory. The host location in pixels, the
-                        error on the RA and DEC of the host location, and
-                        the RA and DEC of the host.      
-        
+    available_sources - astropy table with sources with successfully drawn ridge lines
     """
 
+    # MJH amended this to work entirely in co-ords of the cutout image -- which should always be centred on the LOFAR RA and Dec
+    
     for asource in available_sources:
         source_name=asource['Source_Name']
-        lofarx = asource['RA']
-        lofary = asource['DEC']
+        lofarra = asource['RA']
+        lofardec = asource['DEC']
         lmsize = asource['Size']
+        if debug: print('Doing source',source_name,'with lmsize',lmsize)
                 
         file1 = open(RLF.R1 %source_name, 'r')
         file2 = open(RLF.R2 %source_name, 'r')
         file7 = open(RLF.NDist %source_name)            
-        hdu = fits.open(RLF.fits + source_name + '.fits')
+        hdu = fits.open(RLF.fitscutout + source_name + '-cutout.fits') # refer to cutout file should mean pixels are right
         header = hdu[0].header
+        if debug: print('cutout image shape is',hdu[0].data.shape)
         wcs = WCS(header)
 
+        
         AllLofarLR = []
         AllRidgeLR = []
         #AllWISE = []
@@ -1867,31 +1852,36 @@ def LikelihoodRatios(available_sources):
             Poss_Coords = SkyCoord(Poss_RA*u.degree, Poss_DEC*u.degree, \
                         frame = 'fk5')  ##  turn RA and DEC in to a single, degree point
             Poss_pix = utils.skycoord_to_pixel(Poss_Coords, wcs, origin = 1)  ## convert to pixels
-            Poss_pixx = Poss_pix[0] - (lofarx - lmsize) ##  Adjust to cutout
-            Poss_pixy = Poss_pix[1] - (lofary - lmsize) ##  Adjust to cutout
+            Poss_pixx = Poss_pix[0]
+            Poss_pixy = Poss_pix[1]
+            if debug: print('Position of optical source in pix is',Poss_pixx,Poss_pixy)
             Opt_Poss = np.array([Poss_pixx, Poss_pixy]) ## Combine to an array
 
             points = GetPointList(file1, file2)[0]  ## Retrieve the list of points along the RL
             c1, c2 = ClosestPoints(points, Opt_Poss)[:2]  ##  Find the closest two RL points to the host in pixels
+            if debug: print('c1 and c2 are',c1,c2)
             Ix, Iy = PointOfIntersection(c1, c2, Opt_Poss)  ##  Find the point of intersection along the RL
-
-            Ixa = Ix + (lofarx - lmsize)  ##  Adjust back to the main picture
-            Iya = Iy + (lofary - lmsize)                
+            if debug: print('Ix,Iy are',Ix,Iy)
 
             ##  Turn the adjusted point of intersection into degrees instead of pixels
-            Ideg = utils.pixel_to_skycoord(float(Ixa), float(Iya), wcs, origin = 1)
+            Ideg = utils.pixel_to_skycoord(float(Ix), float(Iy), wcs, origin = 1)
             Ira = Ideg.ra.degree
             Idec = Ideg.dec.degree
 
+            if debug:
+                print('Poss_RA is',Poss_RA,'and Poss_DEC is',Poss_DEC)
+                print('Ira is',Ira)
+                print('Idec is',Idec)
+            
             radRAerr = np.float128(RLC.radraerr)  ##  define the radio errors as zero on the RL
             radDECerr = np.float128(RLC.raddecerr)  ##  until I know better
 
             RLsigRA, RLsigDEC = SigmaR(radRAerr, radDECerr, Poss_RA_err, Poss_DEC_err)
             #RLsigRA = np.float128(0.3)
             RLdelRA, RLdelDEC = DeltaRADEC(Ira, Idec, Poss_RA, Poss_DEC)
-
+            if debug: print('RLdelRA is',RLdelRA,'and RLdelDEC is',RLdelDEC)
             RidgeRDist = LDistance(RLdelRA, RLdelDEC)
-
+            if debug: print('RidgeRDist is',RidgeRDist,'arcsec')
             RidgeY = Lambda(RLsigRA, RLsigDEC)
 
             #optdensity = RLC.optcount / area

@@ -59,5 +59,5 @@ qsub -t 0-366 -v RDIR=/beegfs/lofar/mjh/rgz/Spring/ridgeline ~/git/RL-Xid/LOFAR/
 
 qsub -t 0-366 -v RDIR=/beegfs/lofar/mjh/rgz/Spring/ridgeline ~/git/RL-Xid/LOFAR/DR2/example\ qsub\ files/run_lr_hp.qsub
 
-unbatch.py
+python3.6 ~/git/RL-Xid/LOFAR/DR2/unbatch.py hp_ 
 ```
