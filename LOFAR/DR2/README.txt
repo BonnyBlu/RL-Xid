@@ -24,8 +24,8 @@ Finally the 'randhosts' fits file is a random subset of the 'allhosts' file cont
 
 
 
-##Instructions##
-----------------
+Instructions
+------------
 
 The following are detailed instructions on how to adapt and run the files.  There are pathways that need to be changed and column names that need to be checked for your catalogues.  This is a comprehensive list of those checks that need to take place.
 
