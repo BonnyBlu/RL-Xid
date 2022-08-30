@@ -19,4 +19,124 @@ PossFail = flag for failed ridgelines
 
 The fits 'allhosts' file is filtered to only include sources where the host has 'LRMagBoth>1' (this is the selected threshold for DR2 WEAVE samples, but could be modified). It doesn't include the columns UID_L and PossFail, but includes optRA_RLC and optDEC_RLC columns with the hosts RA and DEC (e.g. for use with visual inspection codes).
 
-Finally the 'randhosts' fits file is a random subset of the 'allhosts' file containing 300 objects to enable easy visual checking. 
+Finally the 'randhosts' fits file is a random subset of the 'allhosts' file containing 300 objects to enable easy visual checking.
+
+
+
+
+##Instructions##
+----------------
+
+The following are detailed instructions on how to adapt and run the files.  There are pathways that need to be changed and column names that need to be checked for your catalogues.  This is a comprehensive list of those checks that need to take place.
+
+
+File structure
+--------------
+
+This structure will allow for multiple runs of the code with the results from each going into a new folder.  As long as the correct folder names are entered as recommended below.
+
+RL-Xid		--------	------- 	'Code (folder)' - name as wish
+(Main Folder)		|
+			-------	'Results1 (folder)' - name as wish
+			|
+			-------	'Results2 (folder)' - etc
+
+
+filter_batch.py
+---------------
+
+- line 15 - need to change bpwd to the pathway to the results folder.
+- Check column names:
+   - line 22 - the total flux of the source
+   - line 23 - the width or major axis of the source
+   - line 24 - the size or LGZ size of the source
+- line 40 - change the number of sources per batch
+- takes 'batch(folder)' as the input (create a batch name for the results)
+
+
+**	run:	python filter_batch.py 'batch(folder)'	**
+
+
+opt_batch.py
+------------
+
+- Check column names:
+    - lines 24, 25, 32 and 33 - RA from the opt catalogue
+    - lines 26, 27, 32 and 33 - Dec from the opt catalogue
+- takes ../'results(folder)'/'batch(folder)' as input
+
+
+** 	run:	python opt_batch.py ../'results(folder)'/'batch(folder)' 	**
+
+
+RLConstantsDR2.py
+-----------------
+
+- Only update if you need too
+
+
+RidgelineFilesDR2.py
+--------------------
+
+- line 17 - update pathway to component catalogue
+- lines 32-37 - update any filenames to personal choice
+- Check column names:
+    - lines 55-61 - update to match radio catalogue (typically SASS)
+    - lines 62-69 - update to match component catalogue (typically CSN and CCN)
+    - lines 70-80 - update to match optical catalogue (typically OptMagA, OptMagP, PossRA, PossDEC)
+- line 94 - change pathway to HostMagnitude_Info.txt
+- line 95 - change pathway to HostMagnitude_InfoFull.txt
+
+
+DR2_setup.py
+------------
+
+- Check column names:
+    - line 79 - the width or major axis of the source
+    - line 80 - the size or LGZ size of the source
+    - lines 81, 83, 84, 85, 88 and 89 - update to match radio catalogue
+    - lines 133, 134, 137 and 138 - update to match component catalogue
+
+
+run_setup.qsub
+--------------
+
+- line 18 - change pathway to location of image mosaic
+- line 19 - change pathway to version of python containing LOFAR packages
+- line 20 - change pathway to the 'batch(folder)'${PBS_ARRAYID}
+- line 23 - change pathway to the 'batch(folder)'$[PBS_ARRAYID}
+- line 28 - change first pathway to include correct 'code(folder)'.  Change second pathway to the component catalogue
+
+**	run: 	qsub -t 0-#(number of batches) run_setup.qsub	**
+
+
+run_ridgelines.qsub
+-------------------
+
+- line 18 - change to correctly load python 3
+- line 20 - change pathway to 'code(folder)'
+- line 22 - change pathway to 'batch(folder)'${PBS_ARRAYID}
+
+**	run:	qsub -t 0-#(number of batches) run_ridgelines.qsub		**
+
+
+run_lr_fall.qsub
+----------------
+
+- line 19 - change to correctly load python 3
+- line 21 - change pathway to 'code(folder)'
+- line 23 - change pathway to 'batch(folder'${PBS_ARRAYID}
+
+**	run:	qsub -t 0-#(number of batches) run_lr_fall.qsub	**
+
+
+unbatch.py
+----------
+
+- takes ../'results(folder)'/'batch(folder)' as input
+
+**	run:	python unbatch.py ../'results(folder)'/'batch(folder)'	**
+
+
+
+

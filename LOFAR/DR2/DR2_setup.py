@@ -81,8 +81,8 @@ for row in sources:
     row['Source_Name']=ssource
     sra=row['RA']
     sdec=row['DEC']
-    optra=row['optRA']
-    optdec=row['optDec']
+    #optra=row['optRA']
+    #optdec=row['optDec']
     flux=row['Peak_flux']
     rms=row['Isl_rms']
     
