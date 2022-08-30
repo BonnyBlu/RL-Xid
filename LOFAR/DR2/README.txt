@@ -51,10 +51,10 @@ filter_batch.py
    - line 23 - the width or major axis of the source
    - line 24 - the size or LGZ size of the source
 - line 40 - change the number of sources per batch
-- takes 'batch(folder)' as the input (create a batch name for the results)
+- takes pathway to radio catalogue, pathway to optical catalogue, 'batch(folder)' as the input (create a batch name for the results)
 
 
-**	run:	python filter_batch.py 'batch(folder)'	**
+**	run:	python filter_batch.py 'radio cat pwd' 'optical cat pwd' 'batch(folder)'	**
 
 
 opt_batch.py
@@ -133,6 +133,9 @@ run_lr_fall.qsub
 unbatch.py
 ----------
 
+- line 28 - change number of random sample to chosen amount
+- line 31 - change threshold for selection if desired
+- line 32 - change number of random sample to chosen amount
 - takes ../'results(folder)'/'batch(folder)' as input
 
 **	run:	python unbatch.py ../'results(folder)'/'batch(folder)'	**

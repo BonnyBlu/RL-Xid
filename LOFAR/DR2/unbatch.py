@@ -1,4 +1,4 @@
- q#!/usr/bin/python
+#!/usr/bin/python
 
 import numpy as np
 from astropy.table import Table,vstack
