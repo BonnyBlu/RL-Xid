@@ -35,7 +35,7 @@ File structure
 
 This structure will allow for multiple runs of the code with the results from each going into a new folder.  As long as the correct folder names are entered as recommended below.
 
-RL-Xid		--------	------- 	'Code (folder)' - name as wish
+RL-Xid		--------------- 'Code (folder)' - name as wish
 (Main Folder)		|
 			-------	'Results1 (folder)' - name as wish
 			|
