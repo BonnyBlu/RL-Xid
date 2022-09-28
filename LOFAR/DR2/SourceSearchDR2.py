@@ -401,14 +401,14 @@ def CreateCutOutCat(source, lofar_table, subcat, Lra, Ldec, lengthpix):
     
     sourcecoords = SkyCoord((subcat[str(RLF.PossRA)])*u.degree, (subcat[str(RLF.PossDEC)])*u.degree, \
                             frame = 'fk5')
-    sourcepix = utils.skycoord_to_pixel(sourcecoords, wcs, origin = 1)
+    sourcepix = utils.skycoord_to_pixel(sourcecoords, wcs, origin = 0)
     
     subcat['xpix'] = sourcepix[0]  ##  Create new columns of the information
     subcat['ypix'] = sourcepix[1]
     
     lofarcoords = SkyCoord(Lra*u.degree, Ldec*u.degree, \
                             frame = 'fk5')
-    lofarpix = utils.skycoord_to_pixel(lofarcoords, wcs, origin = 1)
+    lofarpix = utils.skycoord_to_pixel(lofarcoords, wcs, origin = 0)
     LofarRa = lofarpix[0]
     LofarDec = lofarpix[1]
     
@@ -812,7 +812,7 @@ def CreateLDistTable(source, available_sources):
                 
                 sigRA, sigDEC = SigmaR(LOFAR_RA_errRad, LOFAR_DEC_errRad, poss_RA_errOpt, poss_DEC_errOpt)
                 delRA, delDEC = DeltaRADEC(LOFAR_RA, LOFAR_DEC, poss_RA, poss_DEC)
-                r = LDistance(delRA, delDEC)
+                r = LDistance(LOFAR_RA, LOFAR_DEC, delRA, delDEC)
                                 
                 #allwise.append(allw)
                 sigra.append(sigRA)
@@ -904,7 +904,7 @@ def CreateRDistTable(source, available_sources):
                 
                 sigRA, sigDEC = SigmaR(LOFAR_RA_errRad, LOFAR_DEC_errRad, poss_RA_errOpt, poss_DEC_errOpt)
                 delRA, delDEC = DeltaRADEC(LOFAR_RA, LOFAR_DEC, poss_RA, poss_DEC)
-                r = RDistance(delRA, delDEC, sigRA, sigDEC)
+                r = RDistance(LOFAR_RA, LOFAR_DEC, delRA, delDEC, sigRA, sigDEC)
                                 
                 #allwise.append(allw)
                 sigra.append(sigRA)
@@ -1511,7 +1511,7 @@ def HostRFromLofar(positions):
         
         DelRA, DelDEC = DeltaRADEC(LOFAR_RA, LOFAR_DEC, Host_RA, Host_DEC)
         
-        r = RDistance(DelRA, DelDEC, SigRA, SigDEC)
+        r = RDistance(LOFAR_RA, LOFAR_DEC, DelRA, DelDEC, SigRA, SigDEC)
         
         HostR.append(r)
         sigmara.append(SigRA)
@@ -1598,7 +1598,7 @@ def HostRFromRL(source_list, available_sources, positions):
                 Iya = Iy + (lofary - lmsize)                
                 
                 ##  Turn the adjusted point of intersection into degrees instead of pixels
-                Ideg = utils.pixel_to_skycoord(float(Ixa), float(Iya), wcs, origin = 1)
+                Ideg = utils.pixel_to_skycoord(float(Ixa), float(Iya), wcs, origin = 0)
                 Ira = Ideg.ra.degree
                 Idec = Ideg.dec.degree
                 
@@ -1614,7 +1614,7 @@ def HostRFromRL(source_list, available_sources, positions):
                 RLsigRA, RLsigDEC = SigmaR(radRAerr, radDECerr, optRAerr, optDECerr)
                 RLdelRA, RLdelDEC = DeltaRADEC(Ira, Idec, hostRA, hostDEC)
                 
-                RLr = RDistance(RLdelRA, RLdelDEC, RLsigRA, RLsigDEC)
+                RLr = RDistance(Ira, Idec, RLdelRA, RLdelDEC, RLsigRA, RLsigDEC)
                 
                 HostRRL.append(RLr)
                 SigmaRA.append(RLsigRA)
@@ -1812,13 +1812,15 @@ def LikelihoodRatios(available_sources,debug=False):
     available_sources - astropy table with sources with successfully drawn ridge lines
     """
 
-    # MJH amended this to work entirely in co-ords of the cutout image -- which should always be centred on the LOFAR RA and Dec
+    # MJH amended this to work entirely in co-ords of the cutout image
+    # -- which should always be centred on the LOFAR RA and Dec --
+    # rather than the original FITS image.
     
     for asource in available_sources:
         source_name=asource['Source_Name']
         lofarra = asource['RA']
         lofardec = asource['DEC']
-        lmsize = asource['Size']
+        lmsize = asource['Size']/1.5 # pixels
         if debug: print('Doing source',source_name,'with lmsize',lmsize)
                 
         file1 = open(RLF.R1 %source_name, 'r')
@@ -1851,7 +1853,7 @@ def LikelihoodRatios(available_sources,debug=False):
             Poss_DEC_err = float(row_cols[6])  ## opt err on the DEC for the point
             Poss_Coords = SkyCoord(Poss_RA*u.degree, Poss_DEC*u.degree, \
                         frame = 'fk5')  ##  turn RA and DEC in to a single, degree point
-            Poss_pix = utils.skycoord_to_pixel(Poss_Coords, wcs, origin = 1)  ## convert to pixels
+            Poss_pix = utils.skycoord_to_pixel(Poss_Coords, wcs, origin = 0)  ## convert to pixels
             Poss_pixx = Poss_pix[0]
             Poss_pixy = Poss_pix[1]
             if debug: print('Position of optical source in pix is',Poss_pixx,Poss_pixy)
@@ -1864,7 +1866,7 @@ def LikelihoodRatios(available_sources,debug=False):
             if debug: print('Ix,Iy are',Ix,Iy)
 
             ##  Turn the adjusted point of intersection into degrees instead of pixels
-            Ideg = utils.pixel_to_skycoord(float(Ix), float(Iy), wcs, origin = 1)
+            Ideg = utils.pixel_to_skycoord(float(Ix), float(Iy), wcs, origin = 0)
             Ira = Ideg.ra.degree
             Idec = Ideg.dec.degree
 
@@ -1880,7 +1882,7 @@ def LikelihoodRatios(available_sources,debug=False):
             #RLsigRA = np.float128(0.3)
             RLdelRA, RLdelDEC = DeltaRADEC(Ira, Idec, Poss_RA, Poss_DEC)
             if debug: print('RLdelRA is',RLdelRA,'and RLdelDEC is',RLdelDEC)
-            RidgeRDist = LDistance(RLdelRA, RLdelDEC)
+            RidgeRDist = LDistance(Ira, Idec, RLdelRA, RLdelDEC)
             if debug: print('RidgeRDist is',RidgeRDist,'arcsec')
             RidgeY = Lambda(RLsigRA, RLsigDEC)
 
@@ -1986,7 +1988,7 @@ def SimplifiedLR(source_list, available_sources):
                     Poss_DEC_err = float(row_cols[7])  ## opt err on the DEC for the point
                     Poss_Coords = SkyCoord(Poss_RA*u.degree, Poss_DEC*u.degree, \
                                 frame = 'fk5')  ##  turn RA and DEC in to a single, degree point
-                    Poss_pix = utils.skycoord_to_pixel(Poss_Coords, wcs, origin = 1)  ## convert to pixels
+                    Poss_pix = utils.skycoord_to_pixel(Poss_Coords, wcs, origin = 0)  ## convert to pixels
                     Poss_pixx = Poss_pix[0] - (lofarx - lmsize) ##  Adjust to cutout
                     Poss_pixy = Poss_pix[1] - (lofary - lmsize) ##  Adjust to cutout
                     Opt_Poss = np.array([Poss_pixx, Poss_pixy]) ## Combine to an array
@@ -1999,7 +2001,7 @@ def SimplifiedLR(source_list, available_sources):
                     Iya = Iy + (lofary - lmsize)                
                     
                     ##  Turn the adjusted point of intersection into degrees instead of pixels
-                    Ideg = utils.pixel_to_skycoord(float(Ixa), float(Iya), wcs, origin = 1)
+                    Ideg = utils.pixel_to_skycoord(float(Ixa), float(Iya), wcs, origin = 0)
                     Ira = Ideg.ra.degree
                     Idec = Ideg.dec.degree
                     
@@ -2009,7 +2011,7 @@ def SimplifiedLR(source_list, available_sources):
                     RLsigRA, RLsigDEC = SigmaR(radRAerr, radDECerr, Poss_RA_err, Poss_DEC_err)
                     RLdelRA, RLdelDEC = DeltaRADEC(Ira, Idec, Poss_RA, Poss_DEC)
                     
-                    RidgeRDist = RDistance(RLdelRA, RLdelDEC, RLsigRA, RLsigDEC)
+                    RidgeRDist = RDistance(Ira, Idec, RLdelRA, RLdelDEC, RLsigRA, RLsigDEC)
                                      
                     RidgeY = Lambda(RLsigRA, RLsigDEC)
             
@@ -2150,7 +2152,7 @@ def NClosestDistances(available_sources, lofar_table, n):
         decerr = []
         #allwise = SourceInfo(source, lofar_table)[3]
         
-        lmsize = asource['Size']
+        lmsize = asource['Size']/(3600.0*RLC.ddel) # pixels
                 
         file5 = open(RLF.LDists %source, 'r')
         
@@ -2520,7 +2522,7 @@ def ProbPossSources(table):
 
 #############################################
 
-def LDistance(DelRA, DelDEC):
+def LDistance(ra, dec, DelRA, DelDEC):
     
     """
     Calculates the linear distance between two points using their given
@@ -2529,14 +2531,20 @@ def LDistance(DelRA, DelDEC):
     Parameters
     ----------
     
+    ra - float,
+         the RA in degrees of the position of interest on the sky (not used)
+
+    dec - float,
+          the Dec in degrees of the position of interest on the sky
+
     DelRA - float,
             the value of the offset of the RA coordinates between two points
             in arcseconds.
     
     DelDEC - float,
              the value of the offset of the DEC coordinates between two points
-             in arcseconds.    
-    
+             in arcseconds.
+
     Returns
     -------
 
@@ -2546,13 +2554,13 @@ def LDistance(DelRA, DelDEC):
          
     """
     
-    l = np.sqrt((DelRA ** 2) + (DelDEC ** 2))
+    l = np.sqrt(((np.cos(np.radians(ra))*DelRA) ** 2) + (DelDEC ** 2))
     
     return l
 
 #############################################
 
-def RDistance(DelRA, DelDEC, SigRA, SigDEC):
+def RDistance(ra, dec, DelRA, DelDEC, SigRA, SigDEC):
     
     """
     Calculates the R distance from Best et. al. (2003) between two points
@@ -2584,7 +2592,7 @@ def RDistance(DelRA, DelDEC, SigRA, SigDEC):
          
     """
     
-    r = np.sqrt((DelRA ** 2 / SigRA ** 2) + (DelDEC ** 2 / SigDEC ** 2))
+    r = np.sqrt((((np.cos(np.radians(ra))*DelRA) ** 2) / SigRA ** 2) + (DelDEC ** 2 / SigDEC ** 2))
     
     return r
 

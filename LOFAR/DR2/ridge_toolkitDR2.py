@@ -285,7 +285,6 @@ def CreateCutouts(available_sources):
         centre_pos = SkyCoord(source['RA']*u.deg,source['DEC']*u.deg,frame='fk5')
         lmsize = source['Size']/(3600.0*RLC.ddel) # convert to pixels
         print('Making cutout for source',source_name,'with size',lmsize,'pixels')
-        print('    centre_pos is',centre_pos)
         hdu = DefineHDU(source_name)
         data = hdu[0].data
         size = (2 * lmsize, 2 * lmsize)
@@ -2196,7 +2195,7 @@ def TrialSeries(available_sources, components, R, dphi, ffo):
         n_comp = source[RLF.SASS]
         Lra = source[RLF.SRA]
         Ldec = source[RLF.SDEC]
-        lmsize = source['Size']
+        lmsize = source['Size']/(3600.0*RLC.ddel) # pixels
         flux_array = GetCutoutArray(source_name)
         hdu = DefineCutoutHDU(source_name)
         #hdu = DefineHDU(source_name)
@@ -2217,7 +2216,7 @@ def TrialSeries(available_sources, components, R, dphi, ffo):
         if RLC.debug == True:
             print(str(source_name)+' Flood Fill and Masking')
         try:
-            cinc,cexc=ffo.select(source_name,Lra,Ldec,lmsize/3600.0)
+            cinc,cexc=ffo.select(source_name,Lra,Ldec,source['Size']/3600.0)
             _,FandM_array=ffo.mask(source_name,cinc,cexc,hdu,None,verbose=False)
         except IndexError:
             # This try/except is not needed now but preserved to match

@@ -22,6 +22,10 @@ import RLConstantsDR2 as RLC
 from ridge_toolkitDR2 import DefineCutoutHDU, GetAvailableSources, GetCutoutArray
 from SourceSearchDR2 import GetSourceList, SourceInfo, filter_sourcelist, CreateLDistTable, NClosestDistances, GetCatArea, TableFromLofar, CreateSubCat, CreateCutOutCat, LikelihoodRatios
 import sys
+from astropy_healpix import HEALPix
+import astropy.units as u
+
+hp = HEALPix(nside=16)
 
 fitsfile=RLF.TFC.replace('.txt','.fits')
 available_sources=Table.read(fitsfile)
@@ -117,12 +121,15 @@ n = 30
 print('Finding closest distances')
 NClosestDistances(source_list, LofarTable, n)
 
-# In[ ]:
+#area=GetCatArea(RLF.OptCat)
 
-# get min and max RA and dec directly from radio catalogue
+hpix=hp.lonlat_to_healpix(OptTable['RA']*u.deg,OptTable['DEC']*u.deg)
 
-area=GetCatArea(RLF.OptCat)
-print('Catalogue area is',area)
+uhp=sorted(np.unique(hpix))
+print('There are',len(uhp),'healpixes in the optical catalogue')
+area=hp.pixel_area.to(u.arcsec*u.arcsec).value
+
+print('Catalogue area is',area,'sq. arcsec')
 
 # Generating the likelihood ratios for all possible close sources, for each drawn
 # ridgeline, using the R distance from LOFAR Catalogue position and the ridgeline.
