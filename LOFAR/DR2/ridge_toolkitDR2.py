@@ -282,9 +282,10 @@ def CreateCutouts(available_sources):
     for source in available_sources[RLC.Start::RLC.Step]:
         
         source_name = source['Source_Name']
-        centre_pos = SkyCoord(source['RA']*u.deg,source['DEC']*u.deg,frame='icrs')
-        lmsize = source['Size']
+        centre_pos = SkyCoord(source['RA']*u.deg,source['DEC']*u.deg,frame='fk5')
+        lmsize = source['Size']/(3600.0*RLC.ddel) # convert to pixels
         print('Making cutout for source',source_name,'with size',lmsize,'pixels')
+        print('    centre_pos is',centre_pos)
         hdu = DefineHDU(source_name)
         data = hdu[0].data
         size = (2 * lmsize, 2 * lmsize)
@@ -1788,36 +1789,14 @@ def InitDirections(area_fluxes, init_point, maxima_array):
 
 #############################################
 
-def InitPoint(area_fluxes, CompTable, n_comp, source_name, hdu):   
+def InitPoint(area_fluxes):   
 
-    """
-    Returns position of the starting point for ridge detection
-    based on the highest flux in the associated components in the LOFAR
-    catalogue.  Currently still contains the remain code for the
-    highest flux in the cutout, finding the closest maxima to the
-    catalogue position and starting from the catalogue position.  NEEDS
-    TO BE REMOVED WHEN DECIDED HOW TO PROCEED.
-
-    Parameters
-    -----------
-
-    area_fluxes - 2D array,
-                  raw image array convolved with a centre-heavy cross
-                  kernel
-
-    CompTable - astropy table, shape ( , 8),
-                A table containing all the components linked to each 
-                source.  Listing the location RA and DEC, the ellipse
-                Maj and Min axes and the angle of rotation.  As well as
-                the Total Flux of the component.
-
-    n_comp - int,
-             The number of LOFAR Galaxy Zoo associated components
-    
-    source_name - str,
-                  source name used to identify a .fits file
-    
-    hdu - an opened .fits file
+    """Returns position of the starting point for ridge detection based
+    on the highest flux in the associated components in the LOFAR
+    catalogue. As the area_fluxes image is already masked for the
+    associated components, we just need to find the brightest point,
+    hence this version of the code does not take any catalogue
+    entries as input.
 
     Returns
     -----------
@@ -1830,38 +1809,9 @@ def InitPoint(area_fluxes, CompTable, n_comp, source_name, hdu):
     Radius of possible offset is given by the beam size = 5 pixels IF NEEDED
 
     """
-
-
-## For finding the maximum flux value in the component ellipses and starting the RL from there.        
-
-    sizey,sizex=area_fluxes.shape
-    w=WCS(hdu[0].header)
-    m=Mask((sizey,sizex)) # sizeflux mask object
-    
-    for row in CompTable:
-        source3 = row[0]
-        if source3==source_name:
-            comp_ra = float(row[2])
-            comp_dec = float(row[3])
-            comp_flux = float(row[4])
-            comp_maj = float(row[5])
-            comp_min = float(row[6])
-            comp_pa = float(row[7])
-            
-            (xp,yp)=w.wcs_world2pix(comp_ra,comp_dec,1)
-            cdelt=hdu[0].header['CDELT2']
-            majpix=2.0*(comp_maj/3600.0)/cdelt
-            minpix=2.0*(comp_min/3600.0)/cdelt
-            m.AddMaskEllipse(xp,yp,majpix,minpix,comp_pa+90.0)
-            
-    ellmask = m.narray
-    MaxFluxArray = np.ma.masked_array(area_fluxes, ellmask==1)
-
-    # Find the maximum flux point in the cutout to use as the starting point
-    maxflux = np.unravel_index(np.argmax(np.ma.masked_invalid(MaxFluxArray)), area_fluxes.shape)
-
+    maxflux=np.unravel_index(np.nanargmax(area_fluxes),area_fluxes.shape)
     return np.array([maxflux[1],maxflux[0]])
-
+    
 #############################################
 
 def MaskedCentre(init_point, area_fluxes):
@@ -2044,7 +1994,7 @@ def RetryDirections(new_iparray, init_point, CompTable, n_comp, source_name, hdu
        
     #newmax = np.unravel_index(np.argmax(np.ma.masked_invalid(new_iparray[int(init_point[1]-1):int(init_point[1]+2), \
                                                                    #int(init_point[0]-1):int(init_point[0]+2)])), new_iparray.shape)
-    new_ip = InitPoint(new_iparray, CompTable, n_comp, source_name, hdu)
+    new_ip = InitPoint(new_iparray)
     #print(newmax)
     #new_ip[0] = newmax[1]
     #new_ip[1] = newmax[0]
@@ -2267,58 +2217,27 @@ def TrialSeries(available_sources, components, R, dphi, ffo):
         if RLC.debug == True:
             print(str(source_name)+' Flood Fill and Masking')
         try:
-            #flooded_array = FloodFill(cat_pos, CompTable, n_comp, hdu, flux_array, optical_pos, source_name)
-            #FandM_array = FloodMask(source_name, Lra, Ldec, n_comp, CompTable, hdu, flux_array)
             cinc,cexc=ffo.select(source_name,Lra,Ldec,lmsize/3600.0)
-            #print('Lengths of included, excluded tables are',len(cinc),len(cexc))
             _,FandM_array=ffo.mask(source_name,cinc,cexc,hdu,None,verbose=False)
         except IndexError:
-            
-            y, x = np.mgrid[slice((0),(flux_array.shape[0]),1), slice((0),(flux_array.shape[1]),1)]
-            fig, ax = plt.subplots(figsize=(8,8))
-            fig.suptitle('Source: %s' %source_name)
-            fig.subplots_adjust(top=0.9)
-            
-            ax.set_aspect('equal', 'datalim')
-            A = np.ma.array(flux_array, mask=np.ma.masked_invalid(flux_array).mask)
-            ax.pcolor(x, y, A, cmap=palette, vmin=np.nanmin(A), vmax=np.nanmax(A))
-            ax.scatter(float(optical_pos[0]), float(optical_pos[1]), s=130, c='m', marker='x', label='LOFAR id')
-            #ax.scatter(float(init_point[0]), float(init_point[1]), s=130, c='c', marker='x', label='Initial point')
-            ax.set_xlim(x.min(), x.max()), ax.set_ylim(y.min(), y.max())
-            ax.legend()
-                                       
-            problem = np.array([str(source_name),str('Flood Fill Error_Occurred')])
-            problem_names = np.vstack((problem_names, problem))
-            fig.savefig(RLF.Probs %source_name)
-            plt.close(fig)
-            print('Flood Fill Error Occured.  Index Out of Bounds. Further Analysis Aborted')
-        #maskedComp_array = GetMaskedComp(hdu, source, components, flooded_array, CompTable)  ## Masking
+            # This try/except is not needed now but preserved to match
+            # old code structure
+            print('Flood fill error')
+            raise
         else:
             #print(str(source_name)+' Masking')
             #maskedComp_array = GetMaskedComp(hdu, source, components, flooded_array, CompTable)  ## Masking     
             if RLC.debug == True:
                 print(str(source_name)+' Convolution')
             area_fluxes = AreaFluxes(FandM_array)  ## Convolution
-        
-        
-        #area_fluxes = AreaFluxes(flooded_array)
-        #area_fluxes = maskedComp_array
-        
-        
-        #init_point = np.empty(2)
-
-        # Find the maximum flux point in the cutout to use as the starting point
-        #maxflux = np.unravel_index(np.argmax(np.ma.masked_invalid(area_fluxes)), area_fluxes.shape)
-        #init_point[0] = maxflux[1]
-        #init_point[1] = maxflux[0]
-        
-        #init_point = (float(lmsize)-1, float(lmsize)-1)
+                    
             if RLC.debug == True:
                 print(str(source_name)+' Initial Point')
             
-            init_point = InitPoint(area_fluxes, ffo.t, n_comp, source_name, hdu)       
+            init_point = InitPoint(area_fluxes)
             
-    
+            if RLC.debug: print('Init point is',init_point)
+
             # find both ridges and angular directions at each step
             if RLC.debug == True:
                 print(str(source_name)+' Ridgeline')

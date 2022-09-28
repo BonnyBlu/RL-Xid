@@ -126,7 +126,7 @@ for row in sources:
  
 print("Completed generating fits and thresholded npy cutouts.")
 
-sources.write('radio.fits')
+sources.write('radio.fits',overwrite=True)
 
 for nrow in comps:
     cname=nrow['Component_Name']

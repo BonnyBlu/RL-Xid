@@ -17,14 +17,14 @@ To run the full ridgeline ID process on a new sky area:
    and component catalogue as arguments. This filters the catalogues
    and then batches then appropriately for parallel processing. It
    will generate `N` directories with names `hp_0`, `hp_1`... 
-3. Run DR2_setup.py in each batch subdirectory, using the
+3. Run `DR2_setup.py` in each batch subdirectory, using the
    `run_setup_hp.qsub` file. Use the `-v RDIR` option to specify the
    root directory and the `-t` option to specify the range up to the
    largest numbered `hp` directory. This creates all the subdirectories
    needed and generates cutouts/npy arrays ready for input to RL-XiD.
 4. Run `DR2_ridgelines.py` on all the batches via an appropriate qsub
    file (e.g. `run_ridgelines_hp.qsub`) to generate the ridgelines.
-5. Run DR2_LR.py on all the batches via appropriate qsub file
+5. Run `DR2_LR.py` on all the batches via appropriate qsub file
    (e.g. `run_lr_hp.qsub`) to carry out the likelihood ratio analysis
 6. Run `unbatch.py` to collate results and generate a test sample for
    quicklook checking.
