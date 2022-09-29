@@ -812,7 +812,7 @@ def CreateLDistTable(source, available_sources):
                 
                 sigRA, sigDEC = SigmaR(LOFAR_RA_errRad, LOFAR_DEC_errRad, poss_RA_errOpt, poss_DEC_errOpt)
                 delRA, delDEC = DeltaRADEC(LOFAR_RA, LOFAR_DEC, poss_RA, poss_DEC)
-                r = LDistance(LOFAR_RA, LOFAR_DEC, delRA, delDEC)
+                r = LDistance(delRA, delDEC)
                                 
                 #allwise.append(allw)
                 sigra.append(sigRA)
@@ -904,7 +904,7 @@ def CreateRDistTable(source, available_sources):
                 
                 sigRA, sigDEC = SigmaR(LOFAR_RA_errRad, LOFAR_DEC_errRad, poss_RA_errOpt, poss_DEC_errOpt)
                 delRA, delDEC = DeltaRADEC(LOFAR_RA, LOFAR_DEC, poss_RA, poss_DEC)
-                r = RDistance(LOFAR_RA, LOFAR_DEC, delRA, delDEC, sigRA, sigDEC)
+                r = RDistance(delRA, delDEC, sigRA, sigDEC)
                                 
                 #allwise.append(allw)
                 sigra.append(sigRA)
@@ -1511,7 +1511,7 @@ def HostRFromLofar(positions):
         
         DelRA, DelDEC = DeltaRADEC(LOFAR_RA, LOFAR_DEC, Host_RA, Host_DEC)
         
-        r = RDistance(LOFAR_RA, LOFAR_DEC, DelRA, DelDEC, SigRA, SigDEC)
+        r = RDistance(DelRA, DelDEC, SigRA, SigDEC)
         
         HostR.append(r)
         sigmara.append(SigRA)
@@ -1614,7 +1614,7 @@ def HostRFromRL(source_list, available_sources, positions):
                 RLsigRA, RLsigDEC = SigmaR(radRAerr, radDECerr, optRAerr, optDECerr)
                 RLdelRA, RLdelDEC = DeltaRADEC(Ira, Idec, hostRA, hostDEC)
                 
-                RLr = RDistance(Ira, Idec, RLdelRA, RLdelDEC, RLsigRA, RLsigDEC)
+                RLr = RDistance(RLdelRA, RLdelDEC, RLsigRA, RLsigDEC)
                 
                 HostRRL.append(RLr)
                 SigmaRA.append(RLsigRA)
@@ -1882,7 +1882,7 @@ def LikelihoodRatios(available_sources,debug=False):
             #RLsigRA = np.float128(0.3)
             RLdelRA, RLdelDEC = DeltaRADEC(Ira, Idec, Poss_RA, Poss_DEC)
             if debug: print('RLdelRA is',RLdelRA,'and RLdelDEC is',RLdelDEC)
-            RidgeRDist = LDistance(Ira, Idec, RLdelRA, RLdelDEC)
+            RidgeRDist = LDistance(RLdelRA, RLdelDEC)
             if debug: print('RidgeRDist is',RidgeRDist,'arcsec')
             RidgeY = Lambda(RLsigRA, RLsigDEC)
 
@@ -2011,7 +2011,7 @@ def SimplifiedLR(source_list, available_sources):
                     RLsigRA, RLsigDEC = SigmaR(radRAerr, radDECerr, Poss_RA_err, Poss_DEC_err)
                     RLdelRA, RLdelDEC = DeltaRADEC(Ira, Idec, Poss_RA, Poss_DEC)
                     
-                    RidgeRDist = RDistance(Ira, Idec, RLdelRA, RLdelDEC, RLsigRA, RLsigDEC)
+                    RidgeRDist = RDistance(RLdelRA, RLdelDEC, RLsigRA, RLsigDEC)
                                      
                     RidgeY = Lambda(RLsigRA, RLsigDEC)
             
@@ -2522,7 +2522,7 @@ def ProbPossSources(table):
 
 #############################################
 
-def LDistance(ra, dec, DelRA, DelDEC):
+def LDistance(DelRA, DelDEC):
     
     """
     Calculates the linear distance between two points using their given
@@ -2554,13 +2554,13 @@ def LDistance(ra, dec, DelRA, DelDEC):
          
     """
     
-    l = np.sqrt(((np.cos(np.radians(ra))*DelRA) ** 2) + (DelDEC ** 2))
+    l = np.sqrt((DelRA ** 2) + (DelDEC ** 2))
     
     return l
 
 #############################################
 
-def RDistance(ra, dec, DelRA, DelDEC, SigRA, SigDEC):
+def RDistance(DelRA, DelDEC, SigRA, SigDEC):
     
     """
     Calculates the R distance from Best et. al. (2003) between two points
@@ -2592,7 +2592,7 @@ def RDistance(ra, dec, DelRA, DelDEC, SigRA, SigDEC):
          
     """
     
-    r = np.sqrt((((np.cos(np.radians(ra))*DelRA) ** 2) / SigRA ** 2) + (DelDEC ** 2 / SigDEC ** 2))
+    r = np.sqrt((DelRA ** 2 / SigRA ** 2) + (DelDEC ** 2 / SigDEC ** 2))
     
     return r
 
