@@ -44,7 +44,7 @@ def get_fits(fra,fdec,fsource,fsize):
         hdu.writeto('fits/'+name+'.fits',overwrite=True)
         flag=0
     else:
-        print('Cutout failed for '+str(fsource))
+        print('Cutout failed for',fsource)
         flag=1
 
     return flag
@@ -66,9 +66,10 @@ for d in newdirs:
         os.mkdir(newd)
     except:
         # dir already exists
-        print("Directory "+str(newd)+"already exists")
+        print("Directory",newd,"already exists, cleaning it out")
+        os.system("rm "+newd+"/*")
     else:
-        print("Made directory "+str(newd))
+        print("Made directory ",newd)
 
 sources=Table.read(sourcecat)
 comps=Table.read(compcat)
@@ -121,7 +122,7 @@ for row in sources:
 
             d[d<thres]=np.nan
             mtest=np.nanmax(d)
-            print("Max val of thresholded array is: "+str(mtest))
+            print("Max val of thresholded array is:",mtest)
             np.save(path+"/rms4/"+ssource+'.npy',d)
  
 print("Completed generating fits and thresholded npy cutouts.")
