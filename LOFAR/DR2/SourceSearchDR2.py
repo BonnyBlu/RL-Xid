@@ -1820,7 +1820,8 @@ def LikelihoodRatios(available_sources,debug=False):
         source_name=asource['Source_Name']
         lofarra = asource['RA']
         lofardec = asource['DEC']
-        lmsize = asource['Size']/1.5 # pixels
+        lmsize = asource['Size']/(3600.0*RLC.ddel) # pixels
+
         if debug: print('Doing source',source_name,'with lmsize',lmsize)
                 
         file1 = open(RLF.R1 %source_name, 'r')

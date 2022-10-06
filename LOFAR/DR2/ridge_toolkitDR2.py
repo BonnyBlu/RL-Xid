@@ -2233,7 +2233,13 @@ def TrialSeries(available_sources, components, R, dphi, ffo):
             if RLC.debug == True:
                 print(str(source_name)+' Initial Point')
             
-            init_point = InitPoint(area_fluxes)
+            try:
+                init_point = InitPoint(area_fluxes)
+            except ValueError:
+                print('Failed to find initial point! (all-nan slice?)')
+                problem = np.array([str(source_name),str('Initial_Point_Error')])
+                problem_names = np.vstack((problem_names, problem))
+                continue
             
             if RLC.debug: print('Init point is',init_point)
 
