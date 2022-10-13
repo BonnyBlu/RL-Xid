@@ -14,7 +14,7 @@ import os
 indir=os.getenv('RLDIR')
 
 LofCat = indir+'/radio.fits'
-CompCat = indir+'/../components.fits'
+CompCat = indir+'/data1/intema/lofarpipeline/results/component_association_catalogues/P21/LoTSS_predicted_v0.comp.fits'
 OptCat = indir+'/optical.fits'
 OptCatdf = indir+'/optical.txt'
 PossHosts = indir+'/hosts.csv'
@@ -58,8 +58,8 @@ SRA = 'RA'  # Source catalogue position RA
 SRAE = 'E_RA'  # Source catalogue RA error
 SDEC = 'DEC'  # Source catalogue position DEC
 SDECE = 'E_DEC'  # Source catalogue DEC error
-SASS = 'Assoc'  # Source catalogue number of component associations column
-CSN = 'Parent_Source'  # Component catalogue Source Name
+SASS = 'Predicted_Assoc'  # Source catalogue number of component associations column
+CSN = 'Source_Name'  # Component catalogue Source Name
 CCN = 'Component_Name'  # Component catalogue Component Name
 CTF = 'Total_flux'  # Component catalogue total flux column
 CRA = 'RA'  # Component catalogue position RA
@@ -91,8 +91,7 @@ LMS = 'LM_size'
 
 # Magnitude and Colour Likelihood Ratio
 #Odata = '/beegfs/lofar/jcroston/surveys/dr2_hosts/pwfull.txt' # Original DR1 optical txt file [not needed?]
-DR1Hosts = '/beegfs/lofar/jcroston/surveys/dr2_hosts/testing/HostMagnitude_Info.txt'
-DR1HostsFull = '/beegfs/lofar/jcroston/surveys/dr2_hosts/testing/HostMagnitude_InfoFull.txt'
+DR1Hosts = '/data1/intema/lofarpipeline/data/catalogues/originals/HostMagnitude_Info.txt'
+DR1HostsFull = '/data1/intema/lofarpipeline/data/catalogues/originals/HostMagnitude_InfoFull.txt'
 MCLR = indir+'/MagnitudeColour/Nearest30AllLRW1band-%s.txt'
 LR = indir+'/MagnitudeColour/AllLRW1bandLR-%s.txt'
-

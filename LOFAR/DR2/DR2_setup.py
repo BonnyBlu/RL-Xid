@@ -74,8 +74,8 @@ comps=Table.read(compcat)
 # Extract cutouts and thresholded npy arrays
 
 for row in sources:
-    maj=row['Maj']
-    lgzsiz=row['LGZ_Size']
+    maj=row['Predicted_Width']
+    lgzsiz=row['Predicted_Size']
     ssource=row['Source_Name']
     ssource=ssource.rstrip()
     row['Source_Name']=ssource
@@ -129,11 +129,11 @@ sources.write('radio.fits')
 
 for nrow in comps:
     cname=nrow['Component_Name']
-    pname=nrow['Parent_Source']
+    pname=nrow['Source_Name']
     cname=cname.rstrip()
     pname=pname.rstrip()
     nrow['Component_Name']=cname
-    nrow['Parent_Source']=pname
+    nrow['Source_Name']=pname
 
 #comps.write('../components.fits')
 

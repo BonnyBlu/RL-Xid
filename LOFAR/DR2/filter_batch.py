@@ -12,6 +12,7 @@ import os
 rfil=sys.argv[1]
 ofil=sys.argv[2]
 outroot=sys.argv[3]
+bpwd = '/data1/intema/lofarpipeline/RL-Xid/P21_Test/'
 
 rcat=Table.read(rfil)
 ocat=Table.read(ofil)
@@ -19,8 +20,8 @@ ocat=Table.read(ofil)
 # Filter radio catalogue for flux and size
 
 rfcut=rcat[rcat['Total_flux']>10.0]
-rmcut=rfcut[rfcut['Maj']>15.0]
-rlcut=rfcut[rfcut['LGZ_Size']>15.0]
+rmcut=rfcut[rfcut['Predicted_Width']>15.0]
+rlcut=rfcut[rfcut['Predicted_Size']>15.0]
 rsjoin=vstack([rmcut,rlcut])
 rscut=unique(rsjoin)
 print "Length of rm, rl: ",len(rmcut),len(rlcut)
@@ -36,23 +37,24 @@ print "Length of filtered hosts catalogue is "+str(len(ocut))
 
 # Batch radio catalogue
 
-BNUM=500
+BNUM=25
 
 nbatch=int(lrad/500.0)+1
 
 start=0
-end=499
+end=BNUM-1
 for b in range(0,nbatch):
     bdir=outroot+str(b)
-    bname=bdir+"/"+bdir+".fits"
+    bfolder = bpwd+bdir
+    bname=bfolder+"/"+bdir+".fits"
     newrcat=rscut[start:end]
     try:
-        os.mkdir(bdir)
+        os.mkdir(bfolder)
     except:
         print "Directory "+bdir+" exists"
     newrcat.write(bname)
     start=end
-    end=end+500
+    end=end+BNUM
 
 # write full cats to parent directory
 

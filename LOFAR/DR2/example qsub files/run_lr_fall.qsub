@@ -16,10 +16,11 @@ echo PBS: job identifier is $PBS_JOBID
 echo PBS: job name is $PBS_JOBNAME
 echo ------------------------------------------------------
 
-eval `/usr/bin/modulecmd bash load python3`
+#eval `/usr/bin/modulecmd bash load python3`
 
-cd /beegfs/lofar/jcroston/surveys/weave_production/rlcode/
+cd /data1/intema/lofarpipeline/RL-Xid/LOFAR/DR2
 
-export RLDIR=/beegfs/lofar/jcroston/surveys/weave_production/spring40-45/spring40-45_${PBS_ARRAYID}
+export RLDIR=/data1/intema/lofarpipeline/RL-Xid/P21_Test_${PBS_ARRAYID}
 
+#python3.6 DR2_LR.py
 python3.6 DR2_LR.py
