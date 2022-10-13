@@ -18,9 +18,9 @@ echo ------------------------------------------------------
 
 #eval `/usr/bin/modulecmd bash load python3`
 
-cd /data1/intema/lofarpipeline/RL-Xid/LOFAR/DR2
+cd /data1/tap/ids/RL-Xid/LOFAR/DR2
 
-export RLDIR=/data1/intema/lofarpipeline/RL-Xid/P21_Test_${PBS_ARRAYID}
+export RLDIR=/data1/tap/ids/RL-Xid/P21_Test_${PBS_ARRAYID}
 
 #python3.6 DR2_LR.py
-python3.6 DR2_LR.py
+python DR2_LR.py

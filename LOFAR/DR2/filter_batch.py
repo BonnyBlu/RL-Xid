@@ -12,7 +12,11 @@ import os
 rfil=sys.argv[1]
 ofil=sys.argv[2]
 outroot=sys.argv[3]
-bpwd = '/data1/intema/lofarpipeline/RL-Xid/P21_Test/'
+bpwd = '/data1/tap/ids/RL-Xid/P21_Test/'
+try:
+	os.mkdir(bpwd)
+except:
+	pass
 
 rcat=Table.read(rfil)
 ocat=Table.read(ofil)
@@ -39,7 +43,7 @@ print "Length of filtered hosts catalogue is "+str(len(ocut))
 
 BNUM=25
 
-nbatch=int(lrad/500.0)+1
+nbatch=int(lrad/BNUM)+1
 
 start=0
 end=BNUM-1
@@ -48,6 +52,7 @@ for b in range(0,nbatch):
     bfolder = bpwd+bdir
     bname=bfolder+"/"+bdir+".fits"
     newrcat=rscut[start:end]
+    #print bfolder, bdir, bname
     try:
         os.mkdir(bfolder)
     except:

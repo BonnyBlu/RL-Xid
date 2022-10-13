@@ -17,7 +17,7 @@ ocat=Table.read(optfile)
 dirs=glob.glob(root+"*/")
 
 for d in dirs:
-    rfile=d+d[:-1]+".fits"
+    rfile=d+os.path.basename(d[:-1])+".fits"
     ofile=d+"optical.fits"
     rcat=Table.read(rfile)
     ramin=np.nanmin(rcat['RA'])

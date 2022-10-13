@@ -14,7 +14,7 @@ import os
 indir=os.getenv('RLDIR')
 
 LofCat = indir+'/radio.fits'
-CompCat = indir+'/data1/intema/lofarpipeline/results/component_association_catalogues/P21/LoTSS_predicted_v0.comp.fits'
+CompCat = indir+'/data1/tap/results/component_association_catalogues/P21/LoTSS_predicted_v0.comp.fits'
 OptCat = indir+'/optical.fits'
 OptCatdf = indir+'/optical.txt'
 PossHosts = indir+'/hosts.csv'
@@ -91,7 +91,7 @@ LMS = 'LM_size'
 
 # Magnitude and Colour Likelihood Ratio
 #Odata = '/beegfs/lofar/jcroston/surveys/dr2_hosts/pwfull.txt' # Original DR1 optical txt file [not needed?]
-DR1Hosts = '/data1/intema/lofarpipeline/data/catalogues/originals/HostMagnitude_Info.txt'
-DR1HostsFull = '/data1/intema/lofarpipeline/data/catalogues/originals/HostMagnitude_InfoFull.txt'
+DR1Hosts = '/data1/tap/data/catalogues/originals/HostMagnitude_Info.txt'
+DR1HostsFull = '/data1/tap/data/catalogues/originals/HostMagnitude_InfoFull.txt'
 MCLR = indir+'/MagnitudeColour/Nearest30AllLRW1band-%s.txt'
 LR = indir+'/MagnitudeColour/AllLRW1bandLR-%s.txt'

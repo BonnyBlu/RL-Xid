@@ -15,14 +15,14 @@ echo PBS: job identifier is $PBS_JOBID
 echo PBS: job name is $PBS_JOBNAME
 echo ------------------------------------------------------
 
-export IMAGEDIR=/data1/intema/lofarpipeline/data/images/P21
-export PYTHONPATH=/data1/intema/lofarpipeline/lotss-catalogue/utils:/data1/intema/lofarpipeline/RL-Xid/LOFAR/DR2:${PYTHONPATH}
-export RLDIR=/data1/intema/lofarpipeline/RL-Xid/P21_Test_${PBS_ARRAYID}
+export IMAGEDIR=/data1/tap/data/images/P21
+export PYTHONPATH=/data1/tap/ids/lotss-catalogue/utils:/data1/intema/lofarpipeline/RL-Xid/LOFAR/DR2:${.}
+export RLDIR=/data1/tap/ids/RL-Xid/P21_Test_${PBS_ARRAYID}
 
 FIL=P21_${PBS_ARRAYID}
-DIR=/data1/intema/lofarpipeline/RL-Xid/P21_Test_${PBS_ARRAYID}
+DIR=/data1/tap/ids/RL-Xid/P21_Test_${PBS_ARRAYID}
 
 echo Changing to directory ${DIR} and running on file ${FIL}
 cd ${DIR}
 
-python ../../DR2/DR2_setup.py ${FIL}.fits /data1/intema/lofarpipeline/results/component_association_catalogues/P21
+python ../../DR2/DR2_setup.py ${FIL}.fits /data1/tap/ids/results/component_association_catalogues/P21
