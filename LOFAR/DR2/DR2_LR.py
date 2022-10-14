@@ -10,6 +10,7 @@
 
 
 # Imports
+import numpy as np
 from astropy.io import fits
 import os
 from astropy.table import Table
@@ -19,82 +20,53 @@ from sklearn.neighbors import KernelDensity
 import RidgelineFilesDR2 as RLF
 import RLConstantsDR2 as RLC
 from ridge_toolkitDR2 import DefineCutoutHDU, GetAvailableSources, GetCutoutArray
-from SourceSearchDR2 import *
+from SourceSearchDR2 import GetSourceList, SourceInfo, filter_sourcelist, CreateLDistTable, NClosestDistances, GetCatArea, TableFromLofar, CreateSubCat, CreateCutOutCat, LikelihoodRatios
+import sys
+from astropy_healpix import HEALPix
+import astropy.units as u
 
+hp = HEALPix(nside=16)
 
-# In[ ]:
-
-
-# This will need the file name chnaging to the script file of the Ridgeline code
-'''
-if exists(RLF.psl) == False:
-    print('Ridgelines not drawn.  Full Ridgeline code now running. Please wait output will show below.')
-    get_ipython().magic(u"run 'DR2 - Ridgelines.ipynb'")
-else:
-    print('Ridgeline information present. Please continue')
-'''
-
-# In[ ]:
-
-
-TotalFluxCut = str(RLF.TFC)
-print("About to get available sources from :"+str(TotalFluxCut))
-available_sources = GetAvailableSources(TotalFluxCut)
-print(available_sources.shape)
-
-
-# In[ ]:
-
+fitsfile=RLF.TFC.replace('.txt','.fits')
+available_sources=Table.read(fitsfile)
 
 # Load in the optical/IR and LOFAR catalogues, form tables and df and save as text files 
 # Check columns esp on the Opt/IR
 #OptTable = TableOfSources(str(RLF.OptCat))
-OptTable = Table.read(str(RLF.OptCat))
+OptTable = Table.read(RLF.OptCat)
 # There aren't zillions of columns so fine to use whole thing
-LofarTable = TableFromLofar(str(RLF.LofCat))
+LofarTable = TableFromLofar(RLF.LofCat)
 Lofardf = LofarTable.to_pandas()
 Optdf = OptTable.to_pandas()
-Optdf.to_csv(RLF.OptCatdf, columns = [str(RLF.IDW), str(RLF.IDP), str(RLF.PossRA), str(RLF.PossDEC), str(RLF.OptMagA), str(RLF.OptMagP)], header = True, index = False)
+#Optdf.to_csv(RLF.OptCatdf, columns = [str(RLF.IDW), str(RLF.IDP), str(RLF.PossRA), str(RLF.PossDEC), str(RLF.OptMagA), str(RLF.OptMagP)], header = True, index = False)
 
-
-# In[ ]:
 
 
 # Set up source_list to be used in all of the following fuctions/cells
 probfile = RLF.psl
 source_list = GetSourceList(available_sources, probfile)
 
-
-# In[ ]:
-
-# Creating cutouts from the pw table so that it is easier to find the magnitudes for the 30 closest
-# Only needs to be done once
-#print("Length of source list before subcat loop :",len(source_list))
+# source_list is now a filtered table
 
 zerococ=[]
 for source in source_list:
-    #print("In subcat loop, source is ",source)
-    for asource in available_sources:
-        if source == asource[0]:
-            source_name = asource[0]
-            lofarra = asource[4].astype(float)
-            lofardec = asource[5].astype(float)
-            sizepix = asource[6].astype(float)
-            
-            size = sizepix * RLC.ddel # convert size in pixels to degrees
-            subcat = Optdf[(np.abs(Optdf[str(RLF.PossRA)] - lofarra) * np.cos(lofardec * np.pi / 180.0) < size) & (np.abs(Optdf[str(RLF.PossDEC)] - lofardec) < size)].copy()
+    source_name = source['Source_Name']
+    lofarra = source['RA']
+    lofardec = source['DEC']
+    sizepix = source['Size']
 
-            # Insert the uniform optical position error if required             
-            
-            subcat['raErr'] = np.where(np.isnan(subcat[str(RLF.OptMagP)]), RLC.UniWErr, RLC.UniLErr)
-            subcat['decErr'] = np.where(np.isnan(subcat[str(RLF.OptMagP)]), RLC.UniWErr, RLC.UniLErr)
-            
-            subcat.to_csv(RLF.MagCO %source_name, columns = [str(RLF.IDW), str(RLF.IDP), str(RLF.PossRA), str(RLF.PossDEC), 'raErr', 'decErr', str(RLF.OptMagA), str(RLF.OptMagP)], header = True, index = False)
-            print("Subcat written for source ",source)
+    size = sizepix * RLC.ddel # convert size in pixels to degrees
+    subcat = Optdf[(np.abs(Optdf[str(RLF.PossRA)] - lofarra) * np.cos(lofardec * np.pi / 180.0) < size) & (np.abs(Optdf[str(RLF.PossDEC)] - lofardec) < size)].copy()
+
+    # Insert the uniform optical position error if required             
+
+    subcat['raErr'] = np.where(np.isnan(subcat[str(RLF.OptMagP)]), RLC.UniWErr, RLC.UniLErr)
+    subcat['decErr'] = np.where(np.isnan(subcat[str(RLF.OptMagP)]), RLC.UniWErr, RLC.UniLErr)
+
+    subcat.to_csv(RLF.MagCO %source_name, columns = [str(RLF.IDW), str(RLF.IDP), str(RLF.PossRA), str(RLF.PossDEC), 'raErr', 'decErr', str(RLF.OptMagA), str(RLF.OptMagP)], header = True, index = False)
+    print("Subcat written for source",source_name)
 
             
-# In[ ]:
-
 
 # Looping through all successful sources to create the cutoutcat .txt files.  The distance away to form
 # the sub-catalogue is set in RLConstants and is currently set to 1 arcmin RA and 0.5 arcmin DEC.
@@ -103,85 +75,79 @@ for source in source_list:
 source_count = 0 ## Keeps track of where the loop is
 #print("Length of source list before COC loop: ",len(source_list))
 
-i=0
-for source in source_list: 
-    print("i is ",i)
-    for asource in available_sources:
-        if source == asource[0]:
-            size = asource[6].astype(float)
-            lofar_ra, lofar_dec = SourceInfo(source, LofarTable)[:2]
-            #lofar_ra = asource[4].astype(float)
-            #lofar_dec = asource[5].astype(float)
-            #print("Running CreateSubCat")
-            subcat1 = CreateSubCat(OptTable, lofar_ra, lofar_dec)
+for source in source_list:
+    source_name=source['Source_Name']
+    size = source['Size']
+    #lofar_ra, lofar_dec = SourceInfo(source, LofarTable)[:2] # why was this needed?
+    lofar_ra = source['RA']
+    lofar_dec = source['DEC']
+
+    subcat1 = CreateSubCat(OptTable, lofar_ra, lofar_dec)
+    print('Optical subcat length is',len(subcat1))
     
-            # Insert the uniform optical position error if required
-            subcatdf = subcat1.to_pandas()
+    # Insert the uniform optical position error if required
+    subcatdf = subcat1.to_pandas()
 
-            # Insert the uniform optical position error if required             
+    # Insert the uniform optical position error if required             
 
-            subcatdf['raErr'] = np.where(np.isnan(subcatdf[str(RLF.OptMagP)]), RLC.UniWErr, RLC.UniLErr)
-            subcatdf['decErr'] = np.where(np.isnan(subcatdf[str(RLF.OptMagP)]), RLC.UniWErr, RLC.UniLErr)
-            subcat2 = Table.from_pandas(subcatdf)
-            #print("About to get COC for ",source)
-            cutoutcat,lcat = CreateCutOutCat(source, LofarTable, subcat2, lofar_ra, lofar_dec, size)
-            source_count += 1
-            if lcat>0:
-                print("Source Number = ",source_count)
-                #print("Keeping source for non-zero cutout cat: ",source)
-            else:
-                print("Source Number = ",source_count)
-                print("Removing source for zero-length cutout cat: ",source)
-                zerococ.append(source)
-            i=i+1
+    subcatdf['raErr'] = np.where(np.isnan(subcatdf[str(RLF.OptMagP)]), RLC.UniWErr, RLC.UniLErr)
+    subcatdf['decErr'] = np.where(np.isnan(subcatdf[str(RLF.OptMagP)]), RLC.UniWErr, RLC.UniLErr)
+    subcat2 = Table.from_pandas(subcatdf)
+    #print("About to get COC for ",source)
+    cutoutcat,lcat = CreateCutOutCat(source_name, LofarTable, subcat2, lofar_ra, lofar_dec, size)
+    source_count += 1
+    print("Source Number = ",source_count)
+    if lcat==0:
+        print("Removing source for zero-length cutout cat: ",source_name)
+        zerococ.append(source_name)
 
-for nam in zerococ:
-    source_list.remove(nam)
-            
-print('Number of viable sources = ' + str(len(source_list)))
+source_list=filter_sourcelist(source_list,zerococ)
+        
+print('Number of viable sources = ',len(source_list))
 
-
+if len(source_list)==0:
+    sys.exit(0)
 
 # Create a table of R distance information from LOFAR Catalogue position
 # Only needs to be done once - need to exclude probs?
 for source in source_list:
-    print("Creating distance table for: "+str(source))
-    CreateLDistTable(source,available_sources)
-
-
-# In[ ]:
+    print("Creating distance table for:",source['Source_Name'])
+    CreateLDistTable(source['Source_Name'],source_list)
 
 
 # Find the 30 closest sources for each ridgeline
 # Only needs to be done once
 n = 30
-NClosestDistances(source_list, available_sources, LofarTable, n)
+print('Finding closest distances')
+NClosestDistances(source_list, LofarTable, n)
 
+#area=GetCatArea(RLF.OptCat)
 
-# In[ ]:
+hpix=hp.lonlat_to_healpix(OptTable['RA']*u.deg,OptTable['DEC']*u.deg)
 
-# get min and max RA and dec directly from radio catalogue
+uhp=sorted(np.unique(hpix))
+print('There are',len(uhp),'healpixes in the optical catalogue')
+area=hp.pixel_area.to(u.arcsec*u.arcsec).value
 
-area=GetCatArea(RLF.OptCat)
+print('Catalogue area is',area,'sq. arcsec')
 
 # Generating the likelihood ratios for all possible close sources, for each drawn
 # ridgeline, using the R distance from LOFAR Catalogue position and the ridgeline.
 # Only needs to be done once
-LikelihoodRatios(source_list, available_sources)
-
-
-# In[5]:
-
+print('Finding LRs')
+LikelihoodRatios(source_list)
 
 # CREATE NEAREST 30 INFO
 # Load in the three text files for each source, join all the table information together and save
 # Only needs to be done once
 
-for source in source_list:
+for asource in source_list:
+    source=asource['Source_Name']
+    print('Creating nearest 30 tables for',source)
 
     LofarLR = pd.read_csv(RLF.LLR %source, header = 0)
     RidgeLR = pd.read_csv(RLF.RLR %source, header = 0, usecols = ['Ridge_LR'])
-    MagCutOut = pd.read_csv(RLF.MagCO %source, header = 0, usecols = [str(RLF.IDW), str(RLF.IDP), str(RLF.PossRA), str(RLF.OptMagA), str(RLF.OptMagP)])
+    MagCutOut = pd.read_csv(RLF.MagCO %source, header = 0, usecols = [RLF.IDW, RLF.IDP, RLF.PossRA, RLF.OptMagA, RLF.OptMagP])
     MagCutOut[str(RLF.PossRA)] = MagCutOut[str(RLF.PossRA)].apply(lambda x: round(x, 7))
             
     All_LR = LofarLR.join(RidgeLR['Ridge_LR'])
@@ -196,7 +162,7 @@ for source in source_list:
     MagLR.to_csv(RLF.LRI %source, columns = ['LofarRDis', 'Lofar_LR', str(RLF.PossRA), str(RLF.PossDEC), 'Ridge_LR', 'Multi_LR', str(RLF.IDW), str(RLF.IDP), str(RLF.OptMagP), str(RLF.OptMagA)], header = True, index = False)
 
 
-# In[6]:
+print('Colour LR calculations')
 
 
 # Load in parent population host info
@@ -209,7 +175,8 @@ Hosts['Colour'] = Hosts['r'].astype(np.float64).subtract(Hosts['W1mag'].astype(n
 
 
 # Create the colour column and sample the df
-pwfulldf = pd.read_csv(RLF.OptCatdf, header = 0, usecols = [RLF.IDW,RLF.OptMagP,RLF.OptMagA])
+#pwfulldf = pd.read_csv(RLF.OptCatdf, header = 0, usecols = [RLF.IDW,RLF.OptMagP,RLF.OptMagA])
+pwfulldf=Optdf # already in memory
 # Temporary update to keep in WISE-only galaxies
 ColourPW = pwfulldf[~np.isnan(pwfulldf[RLF.OptMagP]) & ~np.isnan(pwfulldf[RLF.OptMagA])].copy()
 ColourPW.reset_index(drop = True, inplace = True)
@@ -217,16 +184,11 @@ ColourPW['Colour'] = ColourPW[RLF.OptMagP].subtract(ColourPW[RLF.OptMagA], axis 
 ColSam = ColourPW.sample(50000, replace = False)
 
 
-# In[48]:
-
-
 
 '''
 # Skyarea Covered byt he LOFAR data set
 area = (np.deg2rad(RLC.LRAu) - np.deg2rad(RLC.LRAd)) * (np.sin(np.deg2rad(RLC.LDECu)) - np.sin(np.deg2rad(RLC.LDECd))) * np.rad2deg(3600)**2
 '''
-
-# In[49]:
 
 
 # Not running on i-band so only need the W1 band cells
@@ -251,17 +213,12 @@ prob_o = np.exp(kde_o.score_samples(o_sample))
 norm_o = len(ColSam[RLF.OptMagA])/np.sum(prob_o)
 
 
-# In[51]:
-
-
-# functions needed
-
 def GetLR(fr, qm, nm):
     lr = (fr * qm) / nm
     return lr
 
-def GetLR2(fr, qm, nm):
-    print("fr, qm and nm are: ",fr,qm,nm)
+def GetLR2(fr, qm, nm,debug=False):
+    if debug: print("fr, qm and nm are: ",fr,qm,nm)
     # we want density in units of per typical source length
     # squared for LOFAR f(R) and sqrt(density) in arcsec
     #for RL f(R) - take 60 arcsec
@@ -277,9 +234,6 @@ def Getnmc(m, c):
     return nmc * norm_o
 
 
-# In[52]:
-
-
 # Calculating the LR from the text files for the W1 band hosts
 
 # Removed the line where you deal with taking the W1 value if the r band value was 0.
@@ -287,7 +241,8 @@ def Getnmc(m, c):
 # try just fixing the colours here
 
 newdrop=[]
-for source in source_list:
+for asource in source_list:
+    source=asource['Source_Name']
             
     #MLRhw = pd.read_csv(str(RLF.NLRI) %source, header = 0, usecols = ['AllWise', 'LofarRDis', 'ra', 'dec', 'Lofar_LR', 'Ridge_LR', 'SBLR', 'Multi_LR',  'i', 'W1mag'])
     MLR = pd.read_csv(str(RLF.LRI) %source, header = 0, usecols = ['LofarRDis', str(RLF.PossRA), str(RLF.PossDEC), str(RLF.IDW), str(RLF.IDP), str(RLF.OptMagP), str(RLF.OptMagA), 'Multi_LR'])
@@ -295,7 +250,7 @@ for source in source_list:
     MLR['Colour'] = MLR.apply(lambda row: np.where(row[RLF.OptMagP]>0.0,row[RLF.OptMagP]-row[RLF.OptMagA],RLC.meancol),axis=1).astype(np.float128)
     MCLT = MLR[~np.isnan(MLR['Colour'])].copy()
     MCLR = MCLT[~np.isnan(MLR[RLF.OptMagA])].copy()
-    print("Source is ",source," and MCLR has length ",len(MCLR))
+    print("Source is",source,"and MCLR has length",len(MCLR))
     #MCLR['MCLLR'] = MCLR.apply(lambda row: GetLR(row['Lofar_LR'], Getqmc(row['W1mag'], row['Colour']), Getnmc(row['W1mag'], row['Colour'])), axis = 1).astype(np.float128)
     #MCLR['MCRLR'] = MCLR.apply(lambda row: GetLR(row['Ridge_LR'], Getqmc(row['W1mag'], row['Colour']), Getnmc(row['W1mag'], row['Colour'])), axis = 1).astype(np.float128)
     #MCLRhw['MCSBLR'] = MCLRhw.apply(lambda row: GetLR(row['SBLR'], Getqmcw(row['W1mag'], row['Colour']), Getnmcw(row['W1mag'], row['Colour'])), axis = 1).astype(np.float128)
@@ -307,12 +262,9 @@ for source in source_list:
                 
         MCLR.to_csv(str(RLF.LR) %source, columns = ['LofarRDis', str(RLF.PossRA), str(RLF.PossDEC), str(RLF.IDW), str(RLF.IDP), str(RLF.OptMagP), str(RLF.OptMagA), str(RLF.LRMC)], header = True, index = False)
 
-for nam in newdrop:
-    source_list.remove(nam)
+
+source_list=filter_sourcelist(source_list,newdrop)
         
-# In[ ]:
-
-
 # For each source in the list find the maximum combined LR and store all the information
 
 def FindMax(source):
@@ -326,7 +278,9 @@ def FindMax(source):
     
     return CP
 
-PossHosts = pd.concat([FindMax(source) for source in source_list], ignore_index = True, axis = 1)
+print('Finding max LRs and writing table')
+
+PossHosts = pd.concat([FindMax(s['Source_Name']) for s in source_list], ignore_index = True, axis = 1)
 PossHosts.columns = PossHosts.loc[str(RLF.LSN)]
 PossHosts = PossHosts.drop(index = [str(RLF.LSN)])
 PossHostsT = PossHosts.transpose()
@@ -338,5 +292,5 @@ PossHostsT.to_csv(RLF.PossHosts, header = True, index = True)#,  columns = [str(
 
 # Number of sources with a 0 max LR and therefore would possibly be a failed LR
 # or defined by being closest to LOFAR
-print(np.sum(PossHostsT['PossFail']))
+print('Total number of fails is',np.sum(PossHostsT['PossFail']))
 

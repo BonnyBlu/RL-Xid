@@ -32,5 +32,5 @@ for d in dirs:
     nsubcat=subcat[(subcat['RA']<ru) & (subcat['DEC']<du)]
     #filt &= dl<ocat['DEC']<du
     #newocat=ocat[filt]
-    nsubcat.write(ofile)
+    nsubcat.write(ofile,overwrite=True)
 

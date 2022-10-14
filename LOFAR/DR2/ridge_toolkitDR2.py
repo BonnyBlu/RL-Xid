@@ -27,6 +27,7 @@ from skimage.morphology import erosion
 from skimage.feature import peak_local_max
 from skimage.filters import threshold_minimum
 import copy
+from sizeflux_tools import Flood,length3,Mask
 
 #############################################
 
@@ -149,11 +150,13 @@ def CheckQuadrant(angle):
 
 def ComponentsTable(components):
     
-    """
-    Returns a table of LOFAR Galaxy Zoo Associated components to each 
+    """Returns a table of LOFAR Galaxy Zoo Associated components to each 
     source in available sources, their central position RA and DEC, 
     their Total Flux, the Maj and Min axes and the angle of rotation of
     the ellipse.
+
+    This is converted from the standard component table by putting the
+    fields in a specific order so that they can be indexed numerically.
     
     Parameters
     ----------
@@ -169,21 +172,12 @@ def ComponentsTable(components):
                 source.  Listing the location RA and DEC, the ellipse
                 Maj and Min axes and the angle of rotation.  As well as
                 the Total Flux of the component.
-                
+
     """
     
-    hdulistC = fits.open(components)  ## Open the components catalogue
-    tbdataC = hdulistC[1].data  ## Turn out the data part
-    SN2 = tbdataC.field(str(RLF.CSN))
-    CName = tbdataC.field(str(RLF.CCN))
-    Cra = tbdataC.field(str(RLF.CRA))
-    Cdec = tbdataC.field(str(RLF.CDEC))
-    Cflux = tbdataC.field(str(RLF.CTF))
-    Cmaj = tbdataC.field(str(RLF.CMAJ))
-    Cmin = tbdataC.field(str(RLF.CMIN))
-    Cpa = tbdataC.field(str(RLF.CPA))
-    columns2 = [str(RLF.CSN), str(RLF.CCN), str(RLF.CRA), str(RLF.CDEC), str(RLF.CTF), str(RLF.CMAJ), str(RLF.CMIN), str(RLF.CPA)]
-    component_list = np.column_stack((SN2, CName, Cra, Cdec, Cflux, Cmaj, Cmin, Cpa))
+    t = Table.read(components)
+    columns2 = [RLF.CSN, RLF.CCN, RLF.CRA, RLF.CDEC, RLF.CTF, RLF.CMAJ, RLF.CMIN, RLF.CPA]
+    component_list = [t[c] for c in columns2]
     CompTable = Table(component_list, names = columns2)
     
     return CompTable
@@ -260,13 +254,7 @@ def CreateCutouts(available_sources):
     Parameters
     ----------
     
-    available_sources - 2D array, shape(n, 8), dtype='str'
-                        array containing n source names and LOFAR Catalogue
-                        locations in pixel values, number of components
-                        associated with source and LOFAR catalogue locations
-                        as RA and DEC, the length of the source in pixels
-                        and the total flux for all files available in a 
-                        given directory    
+    available_sources - astropy Table
     
     Constants
     ---------
@@ -293,14 +281,13 @@ def CreateCutouts(available_sources):
     
     for source in available_sources[RLC.Start::RLC.Step]:
         
-        source_name = source[0]
-        centre_pos = source[1:3].astype('float64')
-        lmsize = source[6]
+        source_name = source['Source_Name']
+        centre_pos = SkyCoord(source['RA']*u.deg,source['DEC']*u.deg,frame='fk5')
+        lmsize = source['Size']/(3600.0*RLC.ddel) # convert to pixels
+        print('Making cutout for source',source_name,'with size',lmsize,'pixels')
         hdu = DefineHDU(source_name)
         data = hdu[0].data
-        
-        size = (2 * float(lmsize), 2 * float(lmsize))  # pixels
-        
+        size = (2 * lmsize, 2 * lmsize)
         wcs = WCS(hdu[0].header)  ## Keep world coordinate system
         cutout = Cutout2D(data, centre_pos, size, wcs = wcs)
         hdu[0].data = cutout.data
@@ -308,7 +295,7 @@ def CreateCutouts(available_sources):
         hdu[0].writeto(str(RLF.fitsfile) + source_name + '-cutout.fits', overwrite = True)
         
         flux_array = GetFluxArray(source_name)
-        cutout2 = Cutout2D(flux_array, centre_pos, size)
+        cutout2 = Cutout2D(flux_array, centre_pos, size, wcs=wcs)
         np.save(str(RLF.npyfile) + source_name + '-cutout.npy', cutout2.data)
         
 
@@ -625,8 +612,7 @@ def FindRidges(area_fluxes, init_point, R, dphi, lmsize, \
         
         if (np.isnan(phi_val1) and np.isnan(phi_val2)):
 
-            ridge1 = np.full_like(init_point, np.nan)
-            ridge2 = np.full_like(init_point, np.nan)
+            ridge1 = ridge2 = np.array([np.nan, np.nan])
             Rlen1 = np.array([np.nan, np.nan])
             Rlen2 = np.array([np.nan, np.nan])
 
@@ -639,8 +625,7 @@ def FindRidges(area_fluxes, init_point, R, dphi, lmsize, \
             
             if type(larger_cone1) == np.ndarray or type(larger_cone2) == np.ndarray:
 
-                ridge1 = np.full_like(init_point, np.nan)
-                ridge2 = np.full_like(init_point, np.nan)
+                ridge1 = ridge2 = np.array([np.nan, np.nan])
                 Error = 'Unable_to_Find_Initial_Directions'
                 Rlen1 = np.array([np.nan, np.nan])
                 Rlen2 = np.array([np.nan, np.nan])
@@ -666,8 +651,8 @@ def FindRidges(area_fluxes, init_point, R, dphi, lmsize, \
     
                     print('Unable to find the first ridge point. '\
                           'Further source analysis is aborted.')
-                    ridge1 = np.full_like(init_point, np.nan)
-                    ridge2 = np.full_like(init_point, np.nan)
+                    ridge1 = ridge2 = np.array([np.nan,np.nan])
+                    #ridge2 = np.full_like(init_point, np.nan)
                     Error = 'Unable_to_Find_First_Ridge_Point'
                     Rlen1 = np.array([np.nan, np.nan])
                     Rlen2 = np.array([np.nan, np.nan])                
@@ -734,221 +719,6 @@ def FindRidges(area_fluxes, init_point, R, dphi, lmsize, \
 
 #############################################
 
-def FloodFill(cat_pos, CompTable, n_comp, hdu, flux_array, centre_pos, source_name):
-
-    """
-    This function finds the nearest unassociated components and finds flux
-    around the associated components with in a short distance.  It masks
-    the far unassociated flux and allows the near unassociated flux to stay
-    visible hence leaving just the source flux.
-    
-    Parameters
-    ----------
-    
-    cat_pos - 1D array, shape(2,)
-              LOFAR catalogue position of source in arcsec
-            
-    CompTable - astropy table, shape( , 8),
-                A table containing all the components linked to each 
-                source.  Listing the location RA and DEC, the ellipse
-                Maj and Min axes and the angle of rotation.  As well as
-                the Total Flux of the component.
-    
-    n_comp - int,
-             The number of LOFAR Galaxy Zoo associated components
-    
-    hdu - an opened .fits file
-    
-    flux_array - 2D array,
-                 array of pixel fluxes loaded from file
-    
-    centre_pos - 1D array, shape(2,)
-                 centre position of the cutout based on the LOFAR catalogue
-                 position in pixels
-                  
-    source_name - str,
-                  source name used to identify a .fits file
-    
-    Constants
-    ---------
-    
-    rdel - float,
-           the equivalent pixel value to RA in a FITS file, set value
-    
-    ddel - float,
-           the equivalent pixel value to DEC in a FITS file, set value
-                  
-    Returns
-    -------
-    
-    flood_array - 2D array,
-                  masked array covering the unassociated flux and leaving
-                  the flux that might be associated to the source.
-    
-    """
-    
-    
-    #Preliminary tasks
-    #copy array for mask creation
-    
-    mask_array = np.copy(flux_array)
-    
-    #xra = hdu[0].header['CRPIX1']
-    #yra = hdu[0].header['CRPIX2']
-    (xra, yra) = centre_pos
-    #data = hdu[0].data
-    ymax2,xmax2 = flux_array.shape
-    xr2 = np.array(range(xmax2))
-    yr2 = np.array(range(ymax2))
-    xg2,yg2 = np.meshgrid(xr2,yr2)
-    xmin2,xmax2 = xg2.min(),xg2.max()
-    ymin2,ymax2 = yg2.min(),yg2.max()
-    
-    coords_cat = SkyCoord(ra=float(cat_pos[0])*u.degree, dec=float(cat_pos[1])*u.degree, frame='fk5')
-    
-    #Create temporary ds9 region file to use as initial mask
-    regwrite=open(RLF.tmpdir+'temp4.reg','w')
-    regwrite.write('# Region file format: DS9 version 4.1\n'+'global color=green dashlist=8 3 width=1 font="helvetica 10 normal roman" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1\n'+'fk5\n')
-
-    #Define auxiliary array filled with "1", which we will use to create the masks, and auxiliary data array to fill in the ellipses 
-    sizey,sizex = flux_array.shape
-    one_mask=1*np.isfinite(np.zeros((sizey,sizex)))
-    
-    
-    #Case for single component
-    
-    try: 
-        n_comp = int(float(n_comp))  ## This might not be necessary so could take out at a later date.
-    except ValueError:
-        n_comp = 1
-        
-    ell_ra=np.zeros(n_comp)
-    ell_dec=np.zeros(n_comp)
-    ell_maj=np.zeros(n_comp)
-    ell_min=np.zeros(n_comp)
-    ell_pa=np.zeros(n_comp)
-    ell_flux=np.zeros(n_comp)
-        
-    compcounter = 0
-    
-    for row in CompTable:
-        source3 = row[0]
-        comp_ra = float(row[2])
-        comp_dec = float(row[3])
-        comp_flux = float(row[4])
-        comp_maj = float(row[5])
-        comp_min = float(row[6])
-        comp_pa = float(row[7])
-            
-            
-        if (source_name == source3):
-                         
-            if n_comp > 1:
-                ell_ra[compcounter]=comp_ra
-                ell_dec[compcounter]=comp_dec
-                ell_flux[compcounter]=comp_flux
-                ell_maj[compcounter]=comp_maj
-                ell_min[compcounter]=comp_min
-                ell_pa[compcounter]=comp_pa
-                
-                compcounter+=1
-                    
-            else:
-                ell_ra=comp_ra
-                ell_dec=comp_dec
-                ell_flux=comp_flux
-                ell_maj=comp_maj
-                ell_min=comp_min
-                ell_pa=comp_pa
-    
-    if n_comp == 1:
-
-        #Write the ellipse to the ds9 region file 
-        regwrite.write('ellipse('+str(ell_ra)+','+str(ell_dec)+','+str(ell_maj)+'",'+str(ell_min)+'",'+str(float(ell_pa)+90.0)+')')
-        regwrite.close()
-        
-        #In the auxiliary data array, turn to an arbitrary non-zero value the pixels inside the ellipse
-        region=pyregion.open(RLF.tmpdir+'temp4.reg').as_imagecoord(hdu[0].header)
-        mask=region.get_mask(hdu=hdu[0])
-        mask_array[mask==1]=0.02
-
-        #Transform the data array into boolean, then binary values
-        data_bin=1*(np.isfinite(mask_array))
-
-        #Label the data array: this method will assign a numerical label to every island of "1" in our binary data array; we want +-style connectivity
-        data_label=label(data_bin, connectivity=1)    
-
-        #Calculate the various distances in pixels; we have imported the source coordinates from the main program
-        coords_ell=SkyCoord(ra=float(ell_ra)*u.degree, dec=float(ell_dec)*u.degree, frame='fk5')
-        ell_dist_x,ell_dist_y=coords_cat.spherical_offsets_to(coords_ell)
-        ell_dx=float(ell_dist_x.deg/RLC.rdel)
-        ell_dy=float(ell_dist_y.deg/RLC.ddel)
-        pix_ell_ra=int(xra+int(ell_dx)-(xmin2-1)) #needs to be int to be evaluated later
-        pix_ell_dec=int(yra+int(ell_dy)-(ymin2-1)) #needs to be int to be evaluated later
-
-        #Identify the label that corresponds to the island generated from the elliptical region
-        value=data_label[pix_ell_dec,pix_ell_ra]
-        
-        #The output mask will only contain "1" in the areas corresponding to the island of interest
-        temp_mask=(np.ma.masked_where(data_label!=value,one_mask))
-        temp_mask[temp_mask!=1]=0
-        flooded_mask=temp_mask
-        
-        
-    #Case for multiple components
-        
-    else:
-
-        #Write the ellipses to the ds9 region file        
-        for n in range(n_comp): 
-            regwrite.write('ellipse('+str(ell_ra[n])+','+str(ell_dec[n])+','+str(ell_maj[n])+'",'+str(ell_min[n])+'",'+str((float(ell_pa[n])+90.0))+')\n')
-        regwrite.close()
-        
-        #In the data array, turn to an arbitrary non-zero value the pixels inside the ellipse
-        region=pyregion.open(RLF.tmpdir+'temp4.reg').as_imagecoord(hdu[0].header)
-        mask=region.get_mask(hdu=hdu[0])
-        mask_array[mask==1]=0.02
-
-        #Transform the data array into boolean, then binary values
-        data_bin=1*(np.isfinite(mask_array))
-
-        #Label the data array: this method will assign a numerical label to every island of "1" in our binary data array; we want 8-style connectivity
-        data_label=label(data_bin, connectivity=2)    
-
-        #Create an array to store the labels (one for each region-island)
-        multi_labels=np.zeros(n_comp)
-
-        #Initialise the cumulative mask
-        multi_mask=np.zeros((sizey,sizex))
-
-        #Main loop (see comments above for individual step descriptions)
-        for i in range (n_comp):
-            coords_ell=SkyCoord(ra=float(ell_ra[i])*u.degree, dec=float(ell_dec[i])*u.degree, frame='fk5')
-            ell_dist_x,ell_dist_y=coords_cat.spherical_offsets_to(coords_ell)
-            ell_dx=float(ell_dist_x.deg/RLC.rdel)
-            ell_dy=float(ell_dist_y.deg/RLC.ddel)
-            pix_ell_ra=int(xra+int(ell_dx)-(xmin2-1))
-            pix_ell_dec=int(yra+int(ell_dy)-(ymin2-1))
-           
-            value=data_label[pix_ell_dec,pix_ell_ra]
-            
-            #We don't want to add to the mask if the label island is connected to a previous one (overlapping regions/data)
-            if value in multi_labels:
-                multi_labels[i]=value
-            else:        
-                multi_labels[i]=value
-                #Because of how masked arrays work, we need to explicitly set to zero the areas of the array we want masked out... we need a temporary masked array for the intermediate step
-                temp_mask=(np.ma.masked_where(data_label!=value,one_mask))
-                temp_mask[temp_mask!=1]=0
-                #As we have used a 1/0 matrix as a basis, iteratively adding the island masks together will give us the full mask we need 
-                multi_mask=(multi_mask+temp_mask)
-
-        #The output mask will only contain "1" in the areas corresponding to the islands of interest
-        flooded_mask=multi_mask
-
-    flooded_array = np.ma.array(flux_array, mask = ~np.ma.make_mask(flooded_mask))
-        
-    return flooded_array
 
 #############################################
 
@@ -1237,7 +1007,7 @@ def GetFirstPoint(area_fluxes, init_point, cone, chain_mask, R):
 
     if safety_stop == True:
 
-        new_point = np.full_like(init_point, np.nan)
+        new_point = np.array([np.nan, np.nan])
 
     else:
         cone_phislice = np.ma.masked_array(phi, mask=slice_mask, \
@@ -1430,23 +1200,17 @@ def GetProblematicSources(problem_filename):
     Returns
     -------
     
-    problem_sources - a list of sources names    
+    problem_sources - a list of source names    
     
     """
     
-    problem_list = open(problem_filename, 'r')
-    problem_sources = np.empty(2)
-    
+    problem_list = open(problem_filename, 'r').readlines()
+    problem_sources=[]
     for psource in problem_list:
         psource_info = psource.strip()
         pinfo_cols = psource_info.split()
-        psource_name = pinfo_cols[0].strip("''")
-        error_type = pinfo_cols[1].strip("''")
-        
-        psource_summary = np.array([psource_name, error_type])
-        problem_sources = np.vstack((problem_sources, psource_summary))
-        
-    problem_sources = problem_sources[2:,:]
+        problem_sources.append(pinfo_cols[0].strip("''"))
+
     return problem_sources
 
 ############################################# 
@@ -1773,9 +1537,8 @@ def InitAngleRanges(theta1, theta2, dphi):
 
     if np.isnan(theta1) and np.isnan(theta2):
         larger, smaller = np.nan, np.nan
-        range_l = np.full(2, np.nan)
-        range_s = np.full(2, np.nan)
-        print('No initial directions were found.' \
+        range_l = range_s = np.array([np.nan,np.nan])
+        print('No initial directions were found. ' \
                 'Further source analysis is aborted.')
 
     else:
@@ -1903,8 +1666,7 @@ def InitCones(area_fluxes, init_point, dphi, lmsize, CompTable, \
 
         if np.isnan(larger) and np.isnan(smaller):
 
-            cone_l = np.full_like(area_fluxes, np.nan)
-            cone_s = np.full_like(area_fluxes, np.nan)
+            cone_l = cone_s = np.array([np.nan, np.nan])
 
         else:
             r, phi = PolarCoordinates(area_fluxes, init_point)
@@ -1939,8 +1701,7 @@ def InitCones(area_fluxes, init_point, dphi, lmsize, CompTable, \
         Error = 'Initial_ID_Outside_Region. Broken_Cutout'
 
         larger, smaller = np.nan, np.nan
-        cone_l = np.full_like(area_fluxes, np.nan)
-        cone_s = np.full_like(area_fluxes, np.nan)
+        cone_l = cone_s = np.array([np.nan,np.nan])
 
     return larger, smaller, cone_l, cone_s, init_point, Error
 
@@ -2027,36 +1788,14 @@ def InitDirections(area_fluxes, init_point, maxima_array):
 
 #############################################
 
-def InitPoint(area_fluxes, CompTable, n_comp, source_name, hdu):   
+def InitPoint(area_fluxes):   
 
-    """
-    Returns position of the starting point for ridge detection
-    based on the highest flux in the associated components in the LOFAR
-    catalogue.  Currently still contains the remain code for the
-    highest flux in the cutout, finding the closest maxima to the
-    catalogue position and starting from the catalogue position.  NEEDS
-    TO BE REMOVED WHEN DECIDED HOW TO PROCEED.
-
-    Parameters
-    -----------
-
-    area_fluxes - 2D array,
-                  raw image array convolved with a centre-heavy cross
-                  kernel
-
-    CompTable - astropy table, shape ( , 8),
-                A table containing all the components linked to each 
-                source.  Listing the location RA and DEC, the ellipse
-                Maj and Min axes and the angle of rotation.  As well as
-                the Total Flux of the component.
-
-    n_comp - int,
-             The number of LOFAR Galaxy Zoo associated components
-    
-    source_name - str,
-                  source name used to identify a .fits file
-    
-    hdu - an opened .fits file
+    """Returns position of the starting point for ridge detection based
+    on the highest flux in the associated components in the LOFAR
+    catalogue. As the area_fluxes image is already masked for the
+    associated components, we just need to find the brightest point,
+    hence this version of the code does not take any catalogue
+    entries as input.
 
     Returns
     -----------
@@ -2069,115 +1808,9 @@ def InitPoint(area_fluxes, CompTable, n_comp, source_name, hdu):
     Radius of possible offset is given by the beam size = 5 pixels IF NEEDED
 
     """
-
-    # Optical_pos is currently set as the LOFAR position given in the catalogue
-    # Not needed if looking for the highest flux to draw from
-#    
-#    init_point = np.empty(2)
-#
-#     #Find the maximum flux point in the cutout to use as the starting point
-#    maxflux = np.unravel_index(np.argmax(np.ma.masked_invalid(area_fluxes)), area_fluxes.shape)
-#    init_point[0] = maxflux[1]
-#    init_point[1] = maxflux[0]
-#
-#  
-#     #The Original five pixels from the start point code    
-#    if maxima.ndim == 1:
-#        r_x = optical_pos[0] - maxima[0]
-#        r_y = optical_pos[1] - maxima[1]
-#        r = sqrt(r_x**2 + r_y**2)
-#
-#        if r <= 5.:
-#
-#            init_point[0] = maxima[0]
-#            init_point[1] = maxima[1]
-#
-#        else:
-#            init_point = optical_pos
-#
-#    else:
-#        r_x = optical_pos[0] - maxima[:,1]
-#        r_y = optical_pos[1] - maxima[:,0]
-#        r = sqrt(np.power(r_x, 2) + np.power(r_y, 2))
-#        
-#        
-#        if np.amin(r) <= float(lmsize): #5:   # This finds the closest maxima within the cutout
-#
-#            init_point[0] = maxima[np.argmin(r), 1]
-#            init_point[1] = maxima[np.argmin(r), 0]
-#            
-#        else:
-#            init_point = optical_pos
-
-
-## For finding the maximum flux value in the component ellipses and starting the RL from there.        
-    try: 
-        n_comp=int(float(n_comp))  ## This might not be necessary so could take out at a later date.
-    except ValueError:
-        n_comp=1
-            
-    ell_ra=np.zeros(n_comp)
-    ell_dec=np.zeros(n_comp)
-    ell_maj=np.zeros(n_comp)
-    ell_min=np.zeros(n_comp)
-    ell_pa=np.zeros(n_comp)
-    ell_flux=np.zeros(n_comp)
-        
-    compcounter = 0
-
-    regwrite=open(RLF.tmpdir+'temp3.reg','w')  ## Creates the file for storing the info about excluded regions
-    regwrite.write('# Region file format: DS9 version 4.1\n'+'global color=green dashlist=8 3 width=1 font="helvetica 10 normal roman" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1\n'+'fk5\n')
-
-    for row in CompTable:
-        source3 = row[0]
-        comp_ra = float(row[2])
-        comp_dec = float(row[3])
-        comp_flux = float(row[4])
-        comp_maj = float(row[5])
-        comp_min = float(row[6])
-        comp_pa = float(row[7])
-            
-            
-        if (source_name == source3):
-                         
-            if n_comp>1:
-                ell_ra[compcounter]=comp_ra
-                ell_dec[compcounter]=comp_dec
-                ell_flux[compcounter]=comp_flux
-                ell_maj[compcounter]=comp_maj
-                ell_min[compcounter]=comp_min
-                ell_pa[compcounter]=comp_pa
-                    
-                regwrite.write('ellipse('+str(comp_ra)+','+str(comp_dec)+','+str(comp_maj)+'",'+str(comp_min)+'",'+str((float(comp_pa)+90.0))+')\n')
-                    
-                compcounter+=1
-                    
-            else:
-                ell_ra=comp_ra
-                ell_dec=comp_dec
-                ell_flux=comp_flux
-                ell_maj=comp_maj
-                ell_min=comp_min
-                ell_pa=comp_pa
-
-                regwrite.write('ellipse('+str(comp_ra)+','+str(comp_dec)+','+str(comp_maj)+'",'+str(comp_min)+'",'+str((float(comp_pa)+90.0))+')\n')
-                
-    regwrite.close()
-        
-    ellipses = pyregion.open(RLF.tmpdir+'temp3.reg').as_imagecoord(hdu[0].header)
-    #print(ellipses)
-        
-    ellmask = ellipses.get_mask(hdu = hdu[0])
-    MaxFluxArray = np.ma.masked_array(area_fluxes, ~ellmask)
-
-    init_point = np.empty(2)  ## Have to open up an empty one and flip around as the tuple doesn't work
-    # Find the maximum flux point in the cutout to use as the starting point
-    maxflux = np.unravel_index(np.argmax(np.ma.masked_invalid(MaxFluxArray)), area_fluxes.shape)
-    init_point[0] = maxflux[1]
-    init_point[1] = maxflux[0]    
-
-    return init_point
-
+    maxflux=np.unravel_index(np.nanargmax(area_fluxes),area_fluxes.shape)
+    return np.array([maxflux[1],maxflux[0]])
+    
 #############################################
 
 def MaskedCentre(init_point, area_fluxes):
@@ -2360,7 +1993,7 @@ def RetryDirections(new_iparray, init_point, CompTable, n_comp, source_name, hdu
        
     #newmax = np.unravel_index(np.argmax(np.ma.masked_invalid(new_iparray[int(init_point[1]-1):int(init_point[1]+2), \
                                                                    #int(init_point[0]-1):int(init_point[0]+2)])), new_iparray.shape)
-    new_ip = InitPoint(new_iparray, CompTable, n_comp, source_name, hdu)
+    new_ip = InitPoint(new_iparray)
     #print(newmax)
     #new_ip[0] = newmax[1]
     #new_ip[1] = newmax[0]
@@ -2374,7 +2007,7 @@ def RetryDirections(new_iparray, init_point, CompTable, n_comp, source_name, hdu
 
 #############################################
 
-def TotalFluxSelector(catalogue1, CompTable):
+def TotalFluxSelector(catalogue1, ffo):
 
     """
     Saves a .txt file containing source names and their LOFAR catalogue
@@ -2392,9 +2025,7 @@ def TotalFluxSelector(catalogue1, CompTable):
                  path and name to the catalogue .fits file
 
 
-    ## rel_totflux - float, (removed as no longer doing a straight flux cut)
-                     value of the total flux value cut-off, given as
-                     a fraction of the maximum value, for e.g. 0.1 ##
+    ffo: a Flood object from sizeflux
     
     Constants
     ---------
@@ -2410,42 +2041,28 @@ def TotalFluxSelector(catalogue1, CompTable):
     """
     print("Total flux selector opening: ",catalogue1)
     #print("Components table is ",CompTable)
-    hdulist = fits.open(catalogue1)  ## Open the only Catalogue
-    tbdata = hdulist[1].data  ## Find the data
-    Names = tbdata.field(str(RLF.SSN))  ## Find the Source Name Column
-    Flux = tbdata.field(str(RLF.STF))  ## Find the Total Flux Column
-    Lra = tbdata.field(str(RLF.SRA))  ## Find the RA position Column of the LOFAR position
-    LraE = tbdata.field(str(RLF.SRAE))  ## Find the error on the RA of the LOFAR position
-    Ldec = tbdata.field(str(RLF.SDEC))  ## Find the DEC position Column of the LOFAR position
-    LdecE = tbdata.field(str(RLF.SDECE))  ## Find the error on the DEC of the LOFAR position
-    compnum = tbdata.field(str(RLF.SASS))  ## Find the number of associated components
-    #size = tbdata.field('LGZ_Size')  ## Find the source size in Arcsecs
-    #idra = tbdata.field('ID_ra')  ## Find the Optical ID RA
-    #iddec = tbdata.field('ID_dec')  ## Find the Optical DEC 
-    
-    #size = []
-    #for source in Names:
-        #Ssize = FindSizeOfSource(source)
-        #size.append(Ssize)
-    
-    source_names = np.column_stack((Names, Flux, Lra, Ldec, compnum, LraE, LdecE))
-    ## Stack all four columns next to each other. Note: Does it deal with missing data?
-    print("First source is ",Names[0])
+    tbdata = Table.read(catalogue1)  ## Open the radio Catalogue
+    tbdata['Size'] = np.where(~np.isnan(tbdata['LGZ_Size']),tbdata['LGZ_Size']/3600.0,2*tbdata['Maj']*2.0/3600.0)  ## Find the source size in deg -- gives estimate to filter exclusion catalogue only
+    print("First source is ",tbdata[0][RLF.SSN])
     sizes = []
-    for row in source_names:
-        source_name = row[0]
-        Lra = float(row[2])
-        Ldec = float(row[3])
-        n_comp = float(row[4])
-        
-        if n_comp == float(0.0):
-            n_comp = float(1.0)
+    for r in tbdata:
+        source_name = r[RLF.SSN]
+        Lra = r[RLF.SRA]
+        Ldec = r[RLF.SDEC]
+        n_comp = r[RLF.SASS]
+        isize=r['Size']
+        if n_comp == 0:
+            n_comp = 1
         
         hdu = DefineHDU(source_name)
         flux_array = GetFluxArray(source_name)
         print("Max of flux array is ",np.nanmax(flux_array))
+        hdu[0].data=flux_array # otherwise not passed to mask!
+        cinc,cexc=ffo.select(source_name,Lra,Ldec,isize,verbose=False)
+
         try:
-            FMArray = FloodMask(source_name, Lra, Ldec, n_comp, CompTable, hdu, flux_array)
+            _,FMArray = ffo.mask(source_name, cinc, cexc, hdu, None, verbose=False)
+            #FMArray = FloodMask(source_name, Lra, Ldec, n_comp, CompTable, hdu, flux_array)
             print("Max of FMArray is ",np.nanmax(FMArray))
         except:
             print(source_name, 'Flood Fill and Mask Error. Source Not Suitable')
@@ -2456,65 +2073,32 @@ def TotalFluxSelector(catalogue1, CompTable):
             size = FindSizeOfSource(FMArray)
             print(source_name, size)
             sizes.append(size)
-        print("Final size and flux: ",size,row[1])
-    source_names1 = np.column_stack((source_names, sizes))
+        print("Final size and flux: ",size,r['Total_flux'])
+
+    tbdata['Size']=sizes
+    print(tbdata)
+
+    # Note that although a Total_flux criterion is retained flux is
+    # *not measured* in the above and by definition will always be >
+    # 0. So this boils down to whether the preliminary mask can
+    # measure a size. We could measure total flux but don't gain much...
     
-    columns = [str(RLF.SSN), str(RLF.STF), str(RLF.SRA), str(RLF.SDEC), str(RLF.SASS), str(RLF.SRAE), str(RLF.SDECE), 'Size']  ## Creates column headings for calling rather than indices
-    table = Table(source_names1, names = columns, dtype = ('S100', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8'))  ## Turns it in to a table
-    print(table)
-    
-    ## The following deals with seperating out the most luminous
-    ## If want to use need to put rel_totflux back in as an input
-    #selection = table['Total_flux'] > rel_totflux*np.nanmax(table['Total_flux'])
-    
-    ## The following deals with finding the bin with the middle sizes (S1)
-    #sub1 = table['LGZ_Size'] > 27
-    #sub2 = table['LGZ_Size'] <= 60
-    #selection = [a & b for a, b in zip(sub1, sub2)]
-    
-    ## The following deals with finding the bin with the largest by size (S2)
-    #selection = table['LGZ_Size'] > 60
-    
-    ## The following deals with finding the bin with the lowest by Total Flux (F1)
-    #selection = table['Total_flux'] <= 10
-    
-    ## The following deals with finding the bin with the middle Total Fluxes (F2)
-    #sub3 = table['Total_flux'] > 10
-    #sub4 = table['Total_flux'] <= 50
-    #selection = [c & d for c, d in zip(sub3, sub4)]
-    
-    ## The following deals with finding the bin with the largest by Total Flux (F3)
-    #selection = table['Total_flux'] > 50
-    
-    ## The following deals with finding the combinations of size and flux
-    
-    #sub7 = [c & d for c, d in zip(sub3, sub4)] ## Unhash F2
-    #sub6 = table['Total_flux'] > 50 ## F3
-    #sub8 = [a & b for a, b in zip(sub1, sub2)] ## Unhash S1
-    sub5 = table['Size'] > 0 ## S2  THE ONE I WANT Need to have values to remove any NaN
-    sub9 = table['Total_flux'] > 0 ## F4  THE ONE I WANT Need to have values to remove any NaN
-    
-    #selection = [e & f for e, f in zip(sub6, sub5)] ## F3S2
-    #selection = [g & h for g, h in zip(sub6, sub8)] ## F3S1
-    #selection = [j & k for j, k in zip(sub7, sub5)] ## F2S2
-    #selection = [l & m for l, m in zip(sub7, sub8)] ## F2S1
-    selection1 = [e & f for e, f in zip(sub9, sub5)] ## F4S2  ## THE ONE I WANT
+    sub5 = tbdata['Size'] > 0 ## S2  THE ONE I WANT Need to have values to remove any NaN
+    sub9 = tbdata['Total_flux'] > 0 ## F4  THE ONE I WANT Need to have values to remove any NaN
+
+    selection1 = sub5 & sub9
     
     ##  Filters for the flux, size and components
     #sub10 = table['Assoc'] == RLC.LGZA
     #selection2 = [n & o for n, o in zip(selection1, sub10)]  
     
-    output = table[selection1]  ##  THE ONE I WANT
-    #output = table  ## doing everything in the folders
-    
-    ##  Need to unhash and two above if want to add a filter for components as well
-    #output = table[selection2] 
-    
-    np.savetxt(str(RLF.TFC), output[str(RLF.SSN), str(RLF.SRA), str(RLF.SDEC), str(RLF.SASS), 'Size', str(RLF.STF), str(RLF.SRAE), str(RLF.SDECE)], fmt='%s', encoding = 'utf-8')  ## Creates a text file with source id, position, number of components, size and flux in it.
+    output = tbdata[selection1]  ##  THE ONE I WANT
+
+    return output
 
 #############################################
 
-def TrialSeries(available_sources, components, R, dphi, CompTable):
+def TrialSeries(available_sources, components, R, dphi, ffo):
 
     """
     Performs ridge finding and output plotting for a list of
@@ -2549,11 +2133,7 @@ def TrialSeries(available_sources, components, R, dphi, CompTable):
     dphi - float,
            1/2 of the value of the cone opening angle
     
-    CompTable - astropy table, shape( , 8),
-                A table containing all the components linked to each 
-                source.  Listing the location RA and DEC, the ellipse
-                Maj and Min axes and the angle of rotation.  As well as
-                the Total Flux of the component.
+    ffo - Flood object
     
     Constants
     ---------
@@ -2611,18 +2191,21 @@ def TrialSeries(available_sources, components, R, dphi, CompTable):
     # To get a sample of a certain size (ie [0::n] gives every nth source)
     for source in available_sources[RLC.Start::RLC.Step]:
         
-        source_name = source[0]
-        n_comp = source[3].astype(float)
-        Lra = source[4].astype(float)
-        Ldec = source[5].astype(float)
-        lmsize = source[6].astype(float)
+        source_name = source[RLF.SSN]
+        n_comp = source[RLF.SASS]
+        Lra = source[RLF.SRA]
+        Ldec = source[RLF.SDEC]
+        lmsize = source['Size']/(3600.0*RLC.ddel) # pixels
         flux_array = GetCutoutArray(source_name)
         hdu = DefineCutoutHDU(source_name)
+        #hdu = DefineHDU(source_name)
+        #flux_array = GetFluxArray(source_name)
+        hdu[0].data=flux_array # otherwise not passed to mask!
         
         optical_pos = (float(lmsize), float(lmsize))
         
-        if n_comp == 0.0:
-            n_comp = 1.0
+        if n_comp == 0:
+            n_comp = 1
         
         print('-------------------------------------------')
         print('Source Number %s' %source_counter)
@@ -2633,61 +2216,39 @@ def TrialSeries(available_sources, components, R, dphi, CompTable):
         if RLC.debug == True:
             print(str(source_name)+' Flood Fill and Masking')
         try:
-            #flooded_array = FloodFill(cat_pos, CompTable, n_comp, hdu, flux_array, optical_pos, source_name)
-            FandM_array = FloodMask(source_name, Lra, Ldec, n_comp, CompTable, hdu, flux_array)
+            cinc,cexc=ffo.select(source_name,Lra,Ldec,source['Size']/3600.0)
+            _,FandM_array=ffo.mask(source_name,cinc,cexc,hdu,None,verbose=False)
         except IndexError:
-            
-            y, x = np.mgrid[slice((0),(flux_array.shape[0]),1), slice((0),(flux_array.shape[1]),1)]
-            fig, ax = plt.subplots(figsize=(8,8))
-            fig.suptitle('Source: %s' %source_name)
-            fig.subplots_adjust(top=0.9)
-            
-            ax.set_aspect('equal', 'datalim')
-            A = np.ma.array(flux_array, mask=np.ma.masked_invalid(flux_array).mask)
-            ax.pcolor(x, y, A, cmap=palette, vmin=np.nanmin(A), vmax=np.nanmax(A))
-            ax.scatter(float(optical_pos[0]), float(optical_pos[1]), s=130, c='m', marker='x', label='LOFAR id')
-            #ax.scatter(float(init_point[0]), float(init_point[1]), s=130, c='c', marker='x', label='Initial point')
-            ax.set_xlim(x.min(), x.max()), ax.set_ylim(y.min(), y.max())
-            ax.legend()
-                                       
-            problem = np.array([str(source_name),str('Flood Fill Error_Occurred')])
-            problem_names = np.vstack((problem_names, problem))
-            fig.savefig(RLF.Probs %source_name)
-            plt.close(fig)
-            print('Flood Fill Error Occured.  Index Out of Bounds. Further Analysis Aborted')
-        #maskedComp_array = GetMaskedComp(hdu, source, components, flooded_array, CompTable)  ## Masking
+            # This try/except is not needed now but preserved to match
+            # old code structure
+            print('Flood fill error')
+            raise
         else:
             #print(str(source_name)+' Masking')
             #maskedComp_array = GetMaskedComp(hdu, source, components, flooded_array, CompTable)  ## Masking     
             if RLC.debug == True:
                 print(str(source_name)+' Convolution')
             area_fluxes = AreaFluxes(FandM_array)  ## Convolution
-        
-        
-        #area_fluxes = AreaFluxes(flooded_array)
-        #area_fluxes = maskedComp_array
-        
-        
-        #init_point = np.empty(2)
-
-        # Find the maximum flux point in the cutout to use as the starting point
-        #maxflux = np.unravel_index(np.argmax(np.ma.masked_invalid(area_fluxes)), area_fluxes.shape)
-        #init_point[0] = maxflux[1]
-        #init_point[1] = maxflux[0]
-        
-        #init_point = (float(lmsize)-1, float(lmsize)-1)
+                    
             if RLC.debug == True:
                 print(str(source_name)+' Initial Point')
             
-            init_point = InitPoint(area_fluxes, CompTable, n_comp, source_name, hdu)       
+            try:
+                init_point = InitPoint(area_fluxes)
+            except ValueError:
+                print('Failed to find initial point! (all-nan slice?)')
+                problem = np.array([str(source_name),str('Initial_Point_Error')])
+                problem_names = np.vstack((problem_names, problem))
+                continue
             
-    
+            if RLC.debug: print('Init point is',init_point)
+
             # find both ridges and angular directions at each step
             if RLC.debug == True:
                 print(str(source_name)+' Ridgeline')
             try:
                 ridge1, phi_val1, Rlen1, ridge2, phi_val2, Rlen2, Error = FindRidges(area_fluxes, \
-                                    init_point, R, dphi, lmsize, CompTable, n_comp, source_name, hdu)
+                                    init_point, R, dphi, lmsize, ffo.t, n_comp, source_name, hdu)
                     
             except (ValueError, UnboundLocalError):#,TypeError, 
             
@@ -2775,7 +2336,6 @@ def TrialSeries(available_sources, components, R, dphi, CompTable):
     
                 # save the output as a .txt file of the form:
                 # x_coord y_coord angle_dir (3 columns, space separated)
-    
                         file1 = np.column_stack((ridge1[:,0], ridge1[:,1], phi_val1, Rlen1))
                         file2 = np.column_stack((ridge2[:,0], ridge2[:,1], phi_val2, Rlen2))
                         np.savetxt(RLF.R1 %source_name, file1, delimiter=' ')
@@ -3048,7 +2608,7 @@ def FindSizeOfSource(array):
     #print(source)
     #array = GetFluxArray(str(source))
     
-    sourcesize = RLC.ddel*3600.0*length(array)
+    sourcesize = RLC.ddel*3600.0*length3(array)
 
     return sourcesize 
 #############################################

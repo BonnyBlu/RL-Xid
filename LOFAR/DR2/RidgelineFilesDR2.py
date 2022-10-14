@@ -14,7 +14,8 @@ import os
 indir=os.getenv('RLDIR')
 
 LofCat = indir+'/radio.fits'
-CompCat = indir+'/../components.fits'
+CompCat = indir+'/components.fits' # changed by MJH -- each dir has
+                                   # its own components file now
 OptCat = indir+'/optical.fits'
 OptCatdf = indir+'/optical.txt'
 PossHosts = indir+'/hosts.csv'

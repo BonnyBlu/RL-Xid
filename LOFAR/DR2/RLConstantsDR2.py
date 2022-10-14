@@ -8,7 +8,7 @@ Constants for the ridgeline toolkit, Host_Distances and SourceSearch.
 @author: bonnybarkus
 """
 ##  Debugging on or off turns on print statements if True
-debug = False
+debug = True
 
 ## R and dphi sizes
 R = 5 ##  Step size of Ridgeline

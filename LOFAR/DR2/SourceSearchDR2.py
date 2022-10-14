@@ -401,14 +401,14 @@ def CreateCutOutCat(source, lofar_table, subcat, Lra, Ldec, lengthpix):
     
     sourcecoords = SkyCoord((subcat[str(RLF.PossRA)])*u.degree, (subcat[str(RLF.PossDEC)])*u.degree, \
                             frame = 'fk5')
-    sourcepix = utils.skycoord_to_pixel(sourcecoords, wcs, origin = 1)
+    sourcepix = utils.skycoord_to_pixel(sourcecoords, wcs, origin = 0)
     
     subcat['xpix'] = sourcepix[0]  ##  Create new columns of the information
     subcat['ypix'] = sourcepix[1]
     
     lofarcoords = SkyCoord(Lra*u.degree, Ldec*u.degree, \
                             frame = 'fk5')
-    lofarpix = utils.skycoord_to_pixel(lofarcoords, wcs, origin = 1)
+    lofarpix = utils.skycoord_to_pixel(lofarcoords, wcs, origin = 0)
     LofarRa = lofarpix[0]
     LofarDec = lofarpix[1]
     
@@ -788,18 +788,12 @@ def CreateLDistTable(source, available_sources):
     
     #for source in source_list:
     for asource in available_sources:
-        if source == asource[0]:
+        if source == asource['Source_Name']:
             #source_name = asource[0]
-            '''
-            LOFAR_RA = float(asource[4])
-            LOFAR_DEC = float(asource[5])
-            LOFAR_RA_errRad = float(asource[10])
-            LOFAR_DEC_errRad = float(asource[11])
-            '''
-            LOFAR_RA = float(asource[4])
-            LOFAR_DEC = float(asource[5])
-            LOFAR_RA_errRad = float(asource[8])
-            LOFAR_DEC_errRad = float(asource[9])
+            LOFAR_RA = asource['RA']
+            LOFAR_DEC = asource['DEC']
+            LOFAR_RA_errRad = asource['E_RA']
+            LOFAR_DEC_errRad = asource['E_DEC']
             
             file1 = open(RLF.R1 %source, 'r')
             file2 = open(RLF.R2 %source, 'r')
@@ -859,15 +853,7 @@ def CreateRDistTable(source, available_sources):
     source_list - list,
                   a list of the sources that succesfully drew a ridgeline.
 
-    available_sources - 2D array, shape(x, 14), dtype='str'
-                        array containing x source names and LOFAR catalogue
-                        locations in pixel values, number of components
-                        associated with source and LOFAR catalogue locations
-                        as RA and DEC, the length of the source in pixels
-                        and the total flux for all files available in a 
-                        given directory. The host location in pixels, the
-                        error on the RA and DEC of the host location, and
-                        the RA and DEC of the host.
+    available_sources - astropy table
 
     Return
     ------
@@ -981,10 +967,9 @@ def CreateSubCat(source_table, lofarra, lofardec):
              from the LOFAR catalogue position for the given source.
               
     """
-      
-    subcat = source_table[(np.abs(source_table[str(RLF.PossRA)] - lofarra) * \
+    subcat = source_table[(np.abs(source_table[RLF.PossRA] - lofarra) * \
                            np.cos(lofardec * np.pi / 180.0) < RLC.rsize) & \
-                                (np.abs(source_table[str(RLF.PossDEC)] - lofardec) < RLC.dsize)]
+                                (np.abs(source_table[RLF.PossDEC] - lofardec) < RLC.dsize)]
     
     return subcat
 
@@ -1157,6 +1142,27 @@ def GetPointList(file1, file2):
 
 #############################################
 
+def filter_sourcelist(t, badlist):
+    """
+    Removes sources with Source_Name in badlist from a table and returns the table
+
+    Parameters
+    ----------
+
+    t - astropy table
+    badlist -- a list of source names
+
+    Returns
+    -------
+
+    t[filt] - a new table with only the sources not on the bad source list
+    """
+
+    filt=[]
+    for source in t:
+        filt.append(source['Source_Name'] not in badlist)
+    return t[filt]
+
 def GetSourceList(available_sources, probfile):
 
     """
@@ -1168,15 +1174,7 @@ def GetSourceList(available_sources, probfile):
     Parameters
     ----------
 
-    available_sources - 2D array, shape(x, 14), dtype='str'
-                        array containing x source names and LOFAR catalogue
-                        locations in pixel values, number of components
-                        associated with source and LOFAR catalogue locations
-                        as RA and DEC, the length of the source in pixels
-                        and the total flux for all files available in a 
-                        given directory. The host location in pixels, the
-                        error on the RA and DEC of the host location, and
-                        the RA and DEC of the host.
+    available_sources - astropy table
 
     probfile - file path,
                this is the problematic source list that is generated
@@ -1186,9 +1184,7 @@ def GetSourceList(available_sources, probfile):
     Returns
     -------
 
-    asource_names - list,
-                    a list of the source ID names of the successful
-                    sources. 
+    filtered_sources: a new table with only the non-problematic sources
 
     NOTE: Ridge_toolkitNOID has to be in the same folder and the two
     files have to be from the sample that is being graphed. Otherwise this
@@ -1200,13 +1196,11 @@ def GetSourceList(available_sources, probfile):
     
     problematic_sources = GetProblematicSources(probfile)
 
-    psource_names = list(problematic_sources[:,0])
-    asource_names = list(available_sources[:,0])
+    filt=[]
+    for source in available_sources:
+        filt.append(source['Source_Name'] not in problematic_sources)
 
-    for source in psource_names:
-        asource_names.remove(source)
-
-    return asource_names
+    return filter_sourcelist(available_sources,problematic_sources)
 
 #############################################
 
@@ -1604,7 +1598,7 @@ def HostRFromRL(source_list, available_sources, positions):
                 Iya = Iy + (lofary - lmsize)                
                 
                 ##  Turn the adjusted point of intersection into degrees instead of pixels
-                Ideg = utils.pixel_to_skycoord(float(Ixa), float(Iya), wcs, origin = 1)
+                Ideg = utils.pixel_to_skycoord(float(Ixa), float(Iya), wcs, origin = 0)
                 Ira = Ideg.ra.degree
                 Idec = Ideg.dec.degree
                 
@@ -1802,7 +1796,7 @@ def LengthOnLine(rllength, points, posindex, Ix, Iy):
 
 #############################################
 
-def LikelihoodRatios(source_list, available_sources):
+def LikelihoodRatios(available_sources,debug=False):
     
     """
     Calculates the likelihood ratio of the n closest sources as determined by
@@ -1815,105 +1809,104 @@ def LikelihoodRatios(source_list, available_sources):
     Parameters
     ----------
     
-    source_list - list,
-                  a list of the sources that succesfully drew a ridgeline.         
-
-    available_sources - 2D array, shape(x, 14), dtype='str'
-                        array containing x source names and LOFAR catalogue
-                        locations in pixel values, number of components
-                        associated with source and LOFAR catalogue locations
-                        as RA and DEC, the length of the source in pixels
-                        and the total flux for all files available in a 
-                        given directory. The host location in pixels, the
-                        error on the RA and DEC of the host location, and
-                        the RA and DEC of the host.      
-        
+    available_sources - astropy table with sources with successfully drawn ridge lines
     """
 
-    for source in source_list:
-        for asource in available_sources:
-            if source == asource[0]:
-                source_name = asource[0]
-                lofarx = float(asource[1])
-                lofary = float(asource[2])
-                lmsize = float(asource[6])
+    # MJH amended this to work entirely in co-ords of the cutout image
+    # -- which should always be centred on the LOFAR RA and Dec --
+    # rather than the original FITS image.
+    
+    for asource in available_sources:
+        source_name=asource['Source_Name']
+        lofarra = asource['RA']
+        lofardec = asource['DEC']
+        lmsize = asource['Size']/(3600.0*RLC.ddel) # pixels
+
+        if debug: print('Doing source',source_name,'with lmsize',lmsize)
                 
-                file1 = open(RLF.R1 %source_name, 'r')
-                file2 = open(RLF.R2 %source_name, 'r')
-                file7 = open(RLF.NDist %source_name)            
-                hdu = fits.open(RLF.fits + source_name + '.fits')
-                header = hdu[0].header
-                wcs = WCS(header)
-                
-                AllLofarLR = []
-                AllRidgeLR = []
-                #AllWISE = []
-                LofarDist = []
-                RidgeDist = []
-                PossRA = []
-                PossDEC = []
-                
-                for row in file7:
-                    row_info = row.strip()
-                    row_cols = row_info.split(',')
-                    #AWISE = row_cols[0].strip("''").strip('b').strip("''")
-                    LofarRDist = float(row_cols[0])  ## R Distance to LOFAR from file
-                    #LofarSigRA = float(row_cols[2])  ## Sigma RA from file
-                    #LofarSigDEC = float(row_cols[3])  ## Sigma DEC from file
-                    Poss_RA = float(row_cols[3])  ## RA of point for the R dist and sigmas
-                    Poss_DEC = float(row_cols[4])  ## DEC of point for the R dist and sigmas
-                    Poss_RA_err = float(row_cols[5])  ## opt err on RA for the point
-                    Poss_DEC_err = float(row_cols[6])  ## opt err on the DEC for the point
-                    Poss_Coords = SkyCoord(Poss_RA*u.degree, Poss_DEC*u.degree, \
-                                frame = 'fk5')  ##  turn RA and DEC in to a single, degree point
-                    Poss_pix = utils.skycoord_to_pixel(Poss_Coords, wcs, origin = 1)  ## convert to pixels
-                    Poss_pixx = Poss_pix[0] - (lofarx - lmsize) ##  Adjust to cutout
-                    Poss_pixy = Poss_pix[1] - (lofary - lmsize) ##  Adjust to cutout
-                    Opt_Poss = np.array([Poss_pixx, Poss_pixy]) ## Combine to an array
-                    
-                    points = GetPointList(file1, file2)[0]  ## Retrieve the list of points along the RL
-                    c1, c2 = ClosestPoints(points, Opt_Poss)[:2]  ##  Find the closest two RL points to the host in pixels
-                    Ix, Iy = PointOfIntersection(c1, c2, Opt_Poss)  ##  Find the point of intersection along the RL
-                    
-                    Ixa = Ix + (lofarx - lmsize)  ##  Adjust back to the main picture
-                    Iya = Iy + (lofary - lmsize)                
-                    
-                    ##  Turn the adjusted point of intersection into degrees instead of pixels
-                    Ideg = utils.pixel_to_skycoord(float(Ixa), float(Iya), wcs, origin = 1)
-                    Ira = Ideg.ra.degree
-                    Idec = Ideg.dec.degree
-                    
-                    radRAerr = np.float128(RLC.radraerr)  ##  define the radio errors as zero on the RL
-                    radDECerr = np.float128(RLC.raddecerr)  ##  until I know better
-                    
-                    RLsigRA, RLsigDEC = SigmaR(radRAerr, radDECerr, Poss_RA_err, Poss_DEC_err)
-                    #RLsigRA = np.float128(0.3)
-                    RLdelRA, RLdelDEC = DeltaRADEC(Ira, Idec, Poss_RA, Poss_DEC)
-                    
-                    RidgeRDist = LDistance(RLdelRA, RLdelDEC)
-                    
-                    RidgeY = Lambda(RLsigRA, RLsigDEC)
-                    
-                    #optdensity = RLC.optcount / area
-                    optdensity = 1.0 # test
-                    
-                    #RidgeLR = (optdensity / (np.float128(2.0) * RidgeY)) * np.exp(((RidgeRDist ** np.float128(2.0)) / np.float128(2.0)) * ((np.float128(2.0) * RidgeY) - np.float128(1.0))) # Best et al
-                    RidgeLR = (np.float128(1.0) / (np.sqrt(2.0*np.pi*(1/optdensity)) * RLsigRA)) * np.exp(((-RidgeRDist ** np.float128(2.0)) /(2.0*RLsigRA*RLsigRA)))
-                    #RidgeLR = (np.sqrt(optdensity) / (np.sqrt(2.0 * np.pi) * RLsigRA)) * np.exp(((-RidgeRDist ** np.float128(2.0)) /(2.0 * RLsigRA ** np.float128(2.0)))) # 1D Gaussian
-                    #RidgeLR = (np.float128(1.0) / (np.float128(2.0) * np.pi * (np.float128(RLsigRA) ** np.float128(2.0)))) * np.exp((-RidgeRDist ** np.float128(2.0)) / (np.float(2.0) * (np.float128(RLsigRA) ** np.float128(2.0)))) # 2D Gaussian
-           
-                    #LofarY = Lambda(LofarSigRA, LofarSigDEC)
-                    
-                    #LofarRDist = LofarRDist * lmsize
-                    LofarLR = (np.float128(1.0) / (np.float128(2.0) * np.pi * (np.float128(RLC.SigLC) ** np.float128(2.0)))) * np.exp((-LofarRDist ** np.float128(2.0)) / (np.float128(2.0) * (np.float128(RLC.SigLC) ** np.float128(2.0)))) # 2D Gaussian
-                   
-                    #AllWISE.append(AWISE)
-                    AllLofarLR.append(LofarLR)
-                    AllRidgeLR.append(RidgeLR)
-                    LofarDist.append(LofarRDist)
-                    RidgeDist.append(RidgeRDist)
-                    PossRA.append(Poss_RA)
-                    PossDEC.append(Poss_DEC)
+        file1 = open(RLF.R1 %source_name, 'r')
+        file2 = open(RLF.R2 %source_name, 'r')
+        file7 = open(RLF.NDist %source_name)            
+        hdu = fits.open(RLF.fitscutout + source_name + '-cutout.fits') # refer to cutout file should mean pixels are right
+        header = hdu[0].header
+        if debug: print('cutout image shape is',hdu[0].data.shape)
+        wcs = WCS(header)
+
+        
+        AllLofarLR = []
+        AllRidgeLR = []
+        #AllWISE = []
+        LofarDist = []
+        RidgeDist = []
+        PossRA = []
+        PossDEC = []
+
+        for row in file7:
+            row_info = row.strip()
+            row_cols = row_info.split(',')
+            #AWISE = row_cols[0].strip("''").strip('b').strip("''")
+            LofarRDist = float(row_cols[0])  ## R Distance to LOFAR from file
+            #LofarSigRA = float(row_cols[2])  ## Sigma RA from file
+            #LofarSigDEC = float(row_cols[3])  ## Sigma DEC from file
+            Poss_RA = float(row_cols[3])  ## RA of point for the R dist and sigmas
+            Poss_DEC = float(row_cols[4])  ## DEC of point for the R dist and sigmas
+            Poss_RA_err = float(row_cols[5])  ## opt err on RA for the point
+            Poss_DEC_err = float(row_cols[6])  ## opt err on the DEC for the point
+            Poss_Coords = SkyCoord(Poss_RA*u.degree, Poss_DEC*u.degree, \
+                        frame = 'fk5')  ##  turn RA and DEC in to a single, degree point
+            Poss_pix = utils.skycoord_to_pixel(Poss_Coords, wcs, origin = 0)  ## convert to pixels
+            Poss_pixx = Poss_pix[0]
+            Poss_pixy = Poss_pix[1]
+            if debug: print('Position of optical source in pix is',Poss_pixx,Poss_pixy)
+            Opt_Poss = np.array([Poss_pixx, Poss_pixy]) ## Combine to an array
+
+            points = GetPointList(file1, file2)[0]  ## Retrieve the list of points along the RL
+            c1, c2 = ClosestPoints(points, Opt_Poss)[:2]  ##  Find the closest two RL points to the host in pixels
+            if debug: print('c1 and c2 are',c1,c2)
+            Ix, Iy = PointOfIntersection(c1, c2, Opt_Poss)  ##  Find the point of intersection along the RL
+            if debug: print('Ix,Iy are',Ix,Iy)
+
+            ##  Turn the adjusted point of intersection into degrees instead of pixels
+            Ideg = utils.pixel_to_skycoord(float(Ix), float(Iy), wcs, origin = 0)
+            Ira = Ideg.ra.degree
+            Idec = Ideg.dec.degree
+
+            if debug:
+                print('Poss_RA is',Poss_RA,'and Poss_DEC is',Poss_DEC)
+                print('Ira is',Ira)
+                print('Idec is',Idec)
+            
+            radRAerr = np.float128(RLC.radraerr)  ##  define the radio errors as zero on the RL
+            radDECerr = np.float128(RLC.raddecerr)  ##  until I know better
+
+            RLsigRA, RLsigDEC = SigmaR(radRAerr, radDECerr, Poss_RA_err, Poss_DEC_err)
+            #RLsigRA = np.float128(0.3)
+            RLdelRA, RLdelDEC = DeltaRADEC(Ira, Idec, Poss_RA, Poss_DEC)
+            if debug: print('RLdelRA is',RLdelRA,'and RLdelDEC is',RLdelDEC)
+            RidgeRDist = LDistance(RLdelRA, RLdelDEC)
+            if debug: print('RidgeRDist is',RidgeRDist,'arcsec')
+            RidgeY = Lambda(RLsigRA, RLsigDEC)
+
+            #optdensity = RLC.optcount / area
+            optdensity = 1.0 # test
+
+            #RidgeLR = (optdensity / (np.float128(2.0) * RidgeY)) * np.exp(((RidgeRDist ** np.float128(2.0)) / np.float128(2.0)) * ((np.float128(2.0) * RidgeY) - np.float128(1.0))) # Best et al
+            RidgeLR = (np.float128(1.0) / (np.sqrt(2.0*np.pi*(1/optdensity)) * RLsigRA)) * np.exp(((-RidgeRDist ** np.float128(2.0)) /(2.0*RLsigRA*RLsigRA)))
+            #RidgeLR = (np.sqrt(optdensity) / (np.sqrt(2.0 * np.pi) * RLsigRA)) * np.exp(((-RidgeRDist ** np.float128(2.0)) /(2.0 * RLsigRA ** np.float128(2.0)))) # 1D Gaussian
+            #RidgeLR = (np.float128(1.0) / (np.float128(2.0) * np.pi * (np.float128(RLsigRA) ** np.float128(2.0)))) * np.exp((-RidgeRDist ** np.float128(2.0)) / (np.float(2.0) * (np.float128(RLsigRA) ** np.float128(2.0)))) # 2D Gaussian
+
+            #LofarY = Lambda(LofarSigRA, LofarSigDEC)
+
+            #LofarRDist = LofarRDist * lmsize
+            LofarLR = (np.float128(1.0) / (np.float128(2.0) * np.pi * (np.float128(RLC.SigLC) ** np.float128(2.0)))) * np.exp((-LofarRDist ** np.float128(2.0)) / (np.float128(2.0) * (np.float128(RLC.SigLC) ** np.float128(2.0)))) # 2D Gaussian
+
+            #AllWISE.append(AWISE)
+            AllLofarLR.append(LofarLR)
+            AllRidgeLR.append(RidgeLR)
+            LofarDist.append(LofarRDist)
+            RidgeDist.append(RidgeRDist)
+            PossRA.append(Poss_RA)
+            PossDEC.append(Poss_DEC)
                     
         RidgeData = np.column_stack((RidgeDist, AllRidgeLR, PossRA, PossDEC))
         LofarData = np.column_stack((LofarDist, AllLofarLR, PossRA, PossDEC))
@@ -1996,7 +1989,7 @@ def SimplifiedLR(source_list, available_sources):
                     Poss_DEC_err = float(row_cols[7])  ## opt err on the DEC for the point
                     Poss_Coords = SkyCoord(Poss_RA*u.degree, Poss_DEC*u.degree, \
                                 frame = 'fk5')  ##  turn RA and DEC in to a single, degree point
-                    Poss_pix = utils.skycoord_to_pixel(Poss_Coords, wcs, origin = 1)  ## convert to pixels
+                    Poss_pix = utils.skycoord_to_pixel(Poss_Coords, wcs, origin = 0)  ## convert to pixels
                     Poss_pixx = Poss_pix[0] - (lofarx - lmsize) ##  Adjust to cutout
                     Poss_pixy = Poss_pix[1] - (lofary - lmsize) ##  Adjust to cutout
                     Opt_Poss = np.array([Poss_pixx, Poss_pixy]) ## Combine to an array
@@ -2009,7 +2002,7 @@ def SimplifiedLR(source_list, available_sources):
                     Iya = Iy + (lofary - lmsize)                
                     
                     ##  Turn the adjusted point of intersection into degrees instead of pixels
-                    Ideg = utils.pixel_to_skycoord(float(Ixa), float(Iya), wcs, origin = 1)
+                    Ideg = utils.pixel_to_skycoord(float(Ixa), float(Iya), wcs, origin = 0)
                     Ira = Ideg.ra.degree
                     Idec = Ideg.dec.degree
                     
@@ -2101,7 +2094,7 @@ def LOFARLikelihoodRatio(table):
 
 #############################################
     
-def NClosestDistances(source_list, available_sources, lofar_table, n):
+def NClosestDistances(available_sources, lofar_table, n):
     
     
     """
@@ -2148,7 +2141,8 @@ def NClosestDistances(source_list, available_sources, lofar_table, n):
     #host_counter = 0
     #LofarRdistundern = []
     
-    for source in source_list:
+    for asource in available_sources:
+        source=asource['Source_Name']
         #ids = []
         LRdist = []
         sra = []
@@ -2159,9 +2153,7 @@ def NClosestDistances(source_list, available_sources, lofar_table, n):
         decerr = []
         #allwise = SourceInfo(source, lofar_table)[3]
         
-        for asource in available_sources:
-            if source == asource[0]:
-                lmsize = float(asource[6])
+        lmsize = asource['Size']/(3600.0*RLC.ddel) # pixels
                 
         file5 = open(RLF.LDists %source, 'r')
         
@@ -2217,7 +2209,7 @@ def NClosestDistances(source_list, available_sources, lofar_table, n):
         #for i in range(len(nsortLRD)):
         #    LofarRdistundern.append(nsortLRD[i])
     
-    file5.seek(0)
+        file5.seek(0)
     
     #return host_counter
 
@@ -2540,14 +2532,20 @@ def LDistance(DelRA, DelDEC):
     Parameters
     ----------
     
+    ra - float,
+         the RA in degrees of the position of interest on the sky (not used)
+
+    dec - float,
+          the Dec in degrees of the position of interest on the sky
+
     DelRA - float,
             the value of the offset of the RA coordinates between two points
             in arcseconds.
     
     DelDEC - float,
              the value of the offset of the DEC coordinates between two points
-             in arcseconds.    
-    
+             in arcseconds.
+
     Returns
     -------
 
