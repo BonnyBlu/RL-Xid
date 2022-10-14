@@ -66,7 +66,7 @@ opt_batch.py
 - takes ../'results(folder)'/'batch(folder)' as input
 
 
-** 	run:	python opt_batch.py ../'results(folder)'/'batch(folder)' 	**
+** 	run:	python opt_batch.py ../../'results(folder)'/'batch(folder)' 	**
 
 
 RLConstantsDR2.py

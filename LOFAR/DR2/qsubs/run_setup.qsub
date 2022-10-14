@@ -17,7 +17,7 @@ echo ------------------------------------------------------
 
 export IMAGEDIR=/data1/tap/data/images/P21
 export PYTHONPATH=/data1/tap/ids/lotss-catalogue/utils:/data1/intema/lofarpipeline/RL-Xid/LOFAR/DR2:${.}
-export RLDIR=/data1/tap/ids/RL-Xid/P21_Test_${PBS_ARRAYID}
+export RLDIR=/data1/tap/ids/RL-Xid/P21_Test/P21_${PBS_ARRAYID}
 
 FIL=P21_${PBS_ARRAYID}
 DIR=/data1/tap/ids/RL-Xid/P21_Test_${PBS_ARRAYID}
@@ -25,4 +25,4 @@ DIR=/data1/tap/ids/RL-Xid/P21_Test_${PBS_ARRAYID}
 echo Changing to directory ${DIR} and running on file ${FIL}
 cd ${DIR}
 
-python ../../DR2/DR2_setup.py ${FIL}.fits /data1/tap/ids/results/component_association_catalogues/P21
+python ../../DR2/DR2_setup.py ${FIL}.fits /data1/tap/results/component_association_catalogues/P21/LoTSS_predicted_v0.comp.fits
