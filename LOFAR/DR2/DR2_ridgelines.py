@@ -4,7 +4,7 @@
 # ## Ridgeline Code for DR2
 # 
 # This is a script version of notebook from BB containing the ridgeline code for DR2.  This is the preparation for running the likelihood ratio code and only needs to be run once for each dataset. 
-
+# Modified by MJH to use tools from the sizeflux code
 
 # Imports
 
@@ -17,37 +17,40 @@ from ridge_toolkitDR2 import GetMaskedComp, TotalFluxSelector, TrialSeries
 from os.path import exists
 from astropy.table import Table
 from warnings import simplefilter, resetwarnings
+from sizeflux_tools import Flood
+
 simplefilter('ignore') # there is a matplotlib issue with shading on the graphs
 
 R = RLC.R
 dphi = RLC.dphi
 
-CompTable = ComponentsTable(str(RLF.CompCat))
-
-#CompTable=Table.read(RLF.CompCat)
-
-# Add something here to set up all the directories that will be needed if they don't already exist. For now, assume all paths are relative to working directory.
-
+CompTable = ComponentsTable(RLF.CompCat)
+ffo=Flood(CompTable) # this 'flood fill object' carries around the
+                     # components table and has methods to select
+                     # components and flood fill an image
 
 # Run main ridgeline tasks to produce the directories of ridgelines
 
 #if exists(RLF.TFC) == False:
 
-print('Sizes not determined and sample not selected.  Cutouts t Please wait output will show below.')
+print('Measuring sizes')
 start_time = time.time()
-TotalFluxSelector(str(RLF.LofCat), CompTable)
-print('Time taken to calculate sizes = ' + str((time.time()-start_time)/(60*60)))
+available_sources=TotalFluxSelector(RLF.LofCat, ffo)
+print('Time taken to calculate sizes = ' + str((time.time()-start_time)/(60*60)),'h')
     
-available_sources = GetAvailableSources(str(RLF.TFC))
-print('Number of sources in Sample = ' + str(available_sources.shape))
-    
+print('Number of sources in Sample = ',len(available_sources))
+
+available_sources.write(RLF.TFC.replace('.txt','.fits'),overwrite=True)
+
+print('Creating cutouts')
+start_time = time.time()
 CreateCutouts(available_sources)
-print('CutOuts created.')
+print('Time taken to make cutouts = ' + str((time.time()-start_time)/(60*60)),'h')
 
 print('Starting Ridgeline drawing process.')
 start_time = time.time()
-TrialSeries(available_sources, str(RLF.CompCat), R, dphi, CompTable)
-print('Time taken for Ridgelines to draw (Hours) = ' + str((time.time()-start_time)/(60*60)))
+TrialSeries(available_sources, RLF.CompCat, R, dphi, ffo)
+print('Time taken for Ridgelines to draw = ' + str((time.time()-start_time)/(60*60)),'h')
 resetwarnings()
     
 '''

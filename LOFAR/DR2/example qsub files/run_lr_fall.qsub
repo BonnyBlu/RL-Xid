@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #PBS -N DR2_LR
-#PBS -l nodes=1:ppn=1
+#PBS -l nodes=1:ppn=1:fdr14
 #PBS -l walltime=100:00:00
 #Pbs -m abe
 #PBS -l pmem=10g
@@ -18,8 +18,7 @@ echo ------------------------------------------------------
 
 eval `/usr/bin/modulecmd bash load python3`
 
-cd /beegfs/lofar/jcroston/surveys/weave_production/rlcode/
+FIL=rl${PBS_ARRAYID}
+export RLDIR=${RDIR}/$FIL
 
-export RLDIR=/beegfs/lofar/jcroston/surveys/weave_production/spring40-45/spring40-45_${PBS_ARRAYID}
-
-python3.6 DR2_LR.py
+python3.6 ~/git/RL-Xid/LOFAR/DR2/DR2_LR.py

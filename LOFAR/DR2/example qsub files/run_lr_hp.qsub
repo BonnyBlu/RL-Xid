@@ -1,8 +1,10 @@
 #!/bin/bash
 
-#PBS -N DR2_setup
-#PBS -l nodes=1:ppn=1:fdr
-#PBS -l walltime=12:00:00
+#PBS -N DR2_LR_hp
+#PBS -l nodes=1:ppn=1
+#PBS -l walltime=100:00:00
+#Pbs -m abe
+#PBS -l pmem=10g
 
 echo ------------------------------------------------------
 echo -n 'Job is running on node '; cat $PBS_NODEFILE
@@ -14,13 +16,11 @@ echo PBS: job identifier is $PBS_JOBID
 echo PBS: job name is $PBS_JOBNAME
 echo ------------------------------------------------------
 
-export IMAGEDIR=/data/lofar/DR2/
-export PYTHONPATH=/home/mjh/lofar/catalogues:/home/mjh/git/lotss-catalogue/utils/:/soft/python/lib64/python2.7/site-packages
-FIL=rl${PBS_ARRAYID}
+eval `/usr/bin/modulecmd bash load python3`
+export PYTHONPATH=/home/mjh/git/lotss-catalogue/utils:/soft/python3/usr/local/lib64/python3.6/site-packages
 
+FIL=hp_${PBS_ARRAYID}
 export RLDIR=${RDIR}/$FIL
 
-echo Changing to directory ${RLDIR} and running on file ${FIL}
-cd ${RLDIR}
 
-python ~/git/RL-Xid/LOFAR/DR2/DR2_setup.py ${FIL}.fits ../components.fits
+python3.6 ~/git/RL-Xid/LOFAR/DR2/DR2_LR.py
