@@ -23,4 +23,4 @@ export RLDIR=${RDIR}/$FIL
 echo Changing to directory ${RLDIR} and running on file hp_*.fits
 cd ${RLDIR}
 
-python ~/git/RL-Xid/LOFAR/DR2/DR2_setup.py hp_*.fits components.fits
+python /data1/tap/ids/RL-Xid/LOFAR/DR2/DR2_setup.py hp_*.fits components.fits

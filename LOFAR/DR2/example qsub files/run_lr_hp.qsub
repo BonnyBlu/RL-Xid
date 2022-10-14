@@ -16,11 +16,12 @@ echo PBS: job identifier is $PBS_JOBID
 echo PBS: job name is $PBS_JOBNAME
 echo ------------------------------------------------------
 
-eval `/usr/bin/modulecmd bash load python3`
+#eval `/usr/bin/modulecmd bash load python3`
 export PYTHONPATH=/home/mjh/git/lotss-catalogue/utils:/soft/python3/usr/local/lib64/python3.6/site-packages
 
 FIL=hp_${PBS_ARRAYID}
 export RLDIR=${RDIR}/$FIL
 
 
-python3.6 ~/git/RL-Xid/LOFAR/DR2/DR2_LR.py
+#python3.6 ~/git/RL-Xid/LOFAR/DR2/DR2_LR.py
+python /data1/tap/ids/RL-Xid/LOFAR/DR2/DR2_LR.py

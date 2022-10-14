@@ -25,11 +25,13 @@ for d in files:
 
 lout.close()
     
-# make random test sample of 300
+# make random test sample of sample size
+
+sampsize = 100
 
 intab=Table.read(outfile,format='ascii',delimiter=',')
 gtab=intab[intab['LRMagBoth']>1.0]
-nums=np.random.choice(len(gtab),300,replace=False)
+nums=np.random.choice(len(gtab),sampsize,replace=False)
 
 keep=gtab[nums]
 
