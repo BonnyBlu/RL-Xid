@@ -20,7 +20,7 @@ export PYTHONPATH=/data1/tap/ids/lotss-catalogue/utils:/data1/intema/lofarpipeli
 export RLDIR=/data1/tap/ids/RL-Xid/P21_Test/P21_${PBS_ARRAYID}
 
 FIL=P21_${PBS_ARRAYID}
-DIR=/data1/tap/ids/RL-Xid/P21_Test_${PBS_ARRAYID}
+DIR=/data1/tap/ids/RL-Xid/P21_Test${PBS_ARRAYID}
 
 echo Changing to directory ${DIR} and running on file ${FIL}
 cd ${DIR}
