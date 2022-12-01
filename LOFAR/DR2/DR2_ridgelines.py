@@ -24,6 +24,7 @@ simplefilter('ignore') # there is a matplotlib issue with shading on the graphs
 R = RLC.R
 dphi = RLC.dphi
 
+print("Compcat:", RLF.CompCat)
 CompTable = ComponentsTable(RLF.CompCat)
 ffo=Flood(CompTable) # this 'flood fill object' carries around the
                      # components table and has methods to select
@@ -35,6 +36,7 @@ ffo=Flood(CompTable) # this 'flood fill object' carries around the
 
 print('Measuring sizes')
 start_time = time.time()
+print("TotalFluxSelector takes as inputs:", RLF.LofCat, ffo)
 available_sources=TotalFluxSelector(RLF.LofCat, ffo)
 print('Time taken to calculate sizes = ' + str((time.time()-start_time)/(60*60)),'h')
     

@@ -284,6 +284,7 @@ PossHosts = pd.concat([FindMax(s['Source_Name']) for s in source_list], ignore_i
 PossHosts.columns = PossHosts.loc[str(RLF.LSN)]
 PossHosts = PossHosts.drop(index = [str(RLF.LSN)])
 PossHostsT = PossHosts.transpose()
+print("Writing hosts.csv file to:", RLF.PossHosts)
 PossHostsT.to_csv(RLF.PossHosts, header = True, index = True)#,  columns = [str(RLF.LSN), str(RLF.PossRA), str(RLF.PossDEC), str(RLF.IDW), str(RLF.IDP), str(RLF.ID3), str(RLF.OptMagP), str(RLF.OptMagA)]
 
 

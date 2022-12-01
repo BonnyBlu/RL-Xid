@@ -16,6 +16,11 @@ from math import atan2
 from numpy import pi, cos, sin, sqrt, absolute
 import numpy as np
 import os
+###################
+# These lines are inserted to prevent a no display name error
+import matplotlib
+matplotlib.use('Agg')
+#####################
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 import pyregion
@@ -2043,7 +2048,7 @@ def TotalFluxSelector(catalogue1, ffo):
     #print("Components table is ",CompTable)
     tbdata = Table.read(catalogue1)  ## Open the radio Catalogue
     tbdata['Size'] = np.where(~np.isnan(tbdata['LGZ_Size']),tbdata['LGZ_Size']/3600.0,2*tbdata['Maj']*2.0/3600.0)  ## Find the source size in deg -- gives estimate to filter exclusion catalogue only
-    print("First source is ",tbdata[0][RLF.SSN])
+    print("First source is ",tbdata[0][RLF.SSN], "ra,dec: {tbdata[0][RLF.SRA]} {tbdata[0][RLF.SDEC]}", )
     sizes = []
     for r in tbdata:
         source_name = r[RLF.SSN]

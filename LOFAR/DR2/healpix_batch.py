@@ -34,7 +34,7 @@ ccat=Table.read(cfil)
 # Filter radio catalogue for flux and size
 
 rfcut=rcat[rcat['Total_flux']>10.0]
-rmcutf=rfcut['Predicted_Width']>15.0
+rmcutf=rfcut['LGZ_Width']>15.0
 rlcutf=rfcut['LGZ_Size']>15.0
 rscut=rfcut[rmcutf | rlcutf]
 print("Length of rm, rl: ",np.sum(rmcutf),np.sum(rlcutf))
@@ -59,8 +59,12 @@ chpix=hp.lonlat_to_healpix(ccat['RA']*u.deg,ccat['DEC']*u.deg)
 
 for i,pix in enumerate(uhp):
     print('Doing healpix',i,pix)
-    bdir=outroot+'_'+str(i)
+    bdir=os.path.join(os.getenv('ID_RESULTS'),outroot+'_'+str(i))
     bname=bdir+'/'+outroot+'_'+str(pix)+'.fits'
+    #print("Bdir",bdir)
+    #print("outrout",outroot)
+    #print("pix",pix)
+    #print("Bname",bname)
     newrcat=rscut[hpix==pix]
     try:
         os.mkdir(bdir)
@@ -79,7 +83,7 @@ for i,pix in enumerate(uhp):
     newccat.write(bdir+'/'+'components.fits',overwrite=True)
     ocat[omask].write(bdir+'/'+'optical.fits',overwrite=True)
 
-rscut.write("radio_filtered.fits",overwrite=True)
+rscut.write(os.path.join(os.getenv('ID_RESULTS'),"radio_filtered.fits"),overwrite=True)
 #ocut.write("optical_filtered.fits",overwrite=True)
 
 

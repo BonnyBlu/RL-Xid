@@ -393,6 +393,7 @@ def CreateCutOutCat(source, lofar_table, subcat, Lra, Ldec, lengthpix):
 
     #Lra, Ldec, size = SourceInfo(source, lofar_table)[:3]
     
+    #print("DEBUGprint Subcat:",len(subcat)) 
     hdu = fits.open(RLF.fits + source + '.fits')
     header = hdu[0].header
     wcs = WCS(header)
@@ -427,6 +428,10 @@ def CreateCutOutCat(source, lofar_table, subcat, Lra, Ldec, lengthpix):
     
     cutoutcat['disfromLOFAR'] = disfromlofar
     print("Source is "+str(source)+" and length of cat is "+str(len(cutoutcat)))
+    #print("DEBUGprint Lra,Ldec,lengthpix, disfromlofar:",
+    #        Lra, Ldec, lengthpix, disfromlofar )
+    #print("DEBUGprint length of lofar_table, subcat, cutoutcatx, cutoutcatx2, cutoutcaty, cutoutcat:",
+    #        len(lofar_table), len(subcat), len(cutoutcatx),len(cutoutcatx2),len(cutoutcaty) )
     lcat=len(cutoutcat)
     np.savetxt(RLF.coc %source, cutoutcat[str(RLF.PossRA), str(RLF.PossDEC), 'xpix', 'ypix', 'disfromLOFAR', 'raErr', 'decErr'], delimiter = ',', fmt='%s', encoding = 'utf-8')
 
@@ -967,6 +972,10 @@ def CreateSubCat(source_table, lofarra, lofardec):
              from the LOFAR catalogue position for the given source.
               
     """
+    #print("DEBUGprint in subcatfunction. len(source_table), len source_table[RLF.PossRA], RLF.PossRA,"
+    #        "lofarra, lofardec, RLC.rsize, len source_table[RLF.PossDEC], RLF.PossDEC, RLC.dsize", )
+    #print("DEBUGprint", len(source_table), len(source_table[RLF.PossRA]), RLF.PossRA,
+    #        lofarra, lofardec, RLC.rsize, len(source_table[RLF.PossDEC]), RLF.PossDEC, RLC.dsize)
     subcat = source_table[(np.abs(source_table[RLF.PossRA] - lofarra) * \
                            np.cos(lofardec * np.pi / 180.0) < RLC.rsize) & \
                                 (np.abs(source_table[RLF.PossDEC] - lofardec) < RLC.dsize)]
@@ -2180,6 +2189,10 @@ def NClosestDistances(available_sources, lofar_table, n):
             #ids.append(allw)
             
         #sortids = [ids for LRdist, ids in sorted(zip(LRdist, ids))]
+        #print("DEBUGprint: LRdist, sra, sdec, optra, optdec, raerr,decerr", LRdist, sra, sdec,
+        #        optra, optdec, raerr,decerr)
+        #print("DEBUGprint: len LRdist, lens", 
+        #        type(LRdist), len(LRdist),type(sdec), len(sdec))
         sortra = [sra for LRdist, sra in sorted(zip(LRdist, sra))]
         sortdec = [sdec for LRdist, sdec in sorted(zip(LRdist, sdec))]
         sortoptra = [optra for LRdist, optra in sorted(zip(LRdist, optra))]

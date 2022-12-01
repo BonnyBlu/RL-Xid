@@ -49,7 +49,7 @@ rdel = -0.0004166667  ## The equivalent pixel value for RA in FITS file in degre
 ddel = 0.0004166667  ## The equivalent pixel value for DEC in FITS file in degrees (DON'T CHANGE)
 
 ##  GetRidgePoint
-Jlim = 40/95  ##  Mulitpler of RL Length Max that it can jump under
+Jlim = 40.0/95  ##  Mulitpler of RL Length Max that it can jump under
 MaxJ = 1  ##  Multiplier of source size the RL can jump to
 JMax = 1  ##  Multiplier of max RL len (for RL total to be subtracted from)
 
@@ -75,8 +75,8 @@ optcount = 26569141 ##  The number of optical sources in the catalogue
 catarea =  11431476680.687202  ##  The area of the catalogue in arcseconds squared (424 x 3600 x 3600 for LOFAR)
 
 ##  Cutout Creation
-rsize = 1/60  #  The distance away along the RA in degrees to form the sub-catalogue
-dsize = 1/120  #  The distance away along the DEC in degrees to form the sub-catalogue
+rsize = 1.0/60  #  The distance away along the RA in degrees to form the sub-catalogue
+dsize = 1.0/120  #  The distance away along the DEC in degrees to form the sub-catalogue
 
 ##  LikelihoodRatios
 radraerr = 0.2  ## The RA radio on the ridgeline (defined as zero until I know better)

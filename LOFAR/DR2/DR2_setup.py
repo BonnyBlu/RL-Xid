@@ -39,9 +39,14 @@ def get_fits(fra,fdec,fsource,fsize):
     lm=LofarMaps()
     mosname=lm.find(fra,fdec)
     filename=os.environ['IMAGEDIR']+'/'+mosname
-    hdu=extract_subim(filename,fra,fdec,newsize)
+    try:
+        hdu=extract_subim(filename,fra,fdec,newsize)
+    except:
+        flag=1
+        print("Cutout coords outside of fits:",fsource, filename,fra,fdec,newsize)
+        return flag
     if hdu is not None:
-        hdu.writeto('fits/'+name+'.fits',overwrite=True)
+        hdu.writeto(os.path.join(os.getenv('RLDIR'),'fits/'+name+'.fits'),overwrite=True)
         flag=0
     else:
         print('Cutout failed for',fsource)
@@ -58,8 +63,8 @@ compcat = sys.argv[2]
 #inridge="RidgelineFiles_temp.py"
 newdirs=['fits','rms4','fits_cutouts','rms4_cutouts','Distances','MagnitudeColour','Ratios','CutOutCats','MagCutOutCats','badsources_output','ridges','problematic','cutouts']
 
-path=os.getcwd()
-
+#path=os.getcwd()
+path = os.getenv('RLDIR')
 for d in newdirs:
     newd=path+'/'+d
     try:
@@ -76,7 +81,8 @@ comps=Table.read(compcat)
 # Extract cutouts and thresholded npy arrays
 
 for row in sources:
-    maj=row['Predicted_Width']
+    #maj=row['Predicted_Width']
+    maj=row['LGZ_Width'] # Introducing some confusement here
     lgzsiz=row['LGZ_Size']
     ssource=row['Source_Name']
     ssource=ssource.rstrip()
@@ -127,7 +133,7 @@ for row in sources:
  
 print("Completed generating fits and thresholded npy cutouts.")
 
-sources.write('radio.fits',overwrite=True)
+sources.write(os.path.join(path,'radio.fits'),overwrite=True)
 
 for nrow in comps:
     cname=nrow['Component_Name']

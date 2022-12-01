@@ -59,7 +59,7 @@ SRA = 'RA'  # Source catalogue position RA
 SRAE = 'E_RA'  # Source catalogue RA error
 SDEC = 'DEC'  # Source catalogue position DEC
 SDECE = 'E_DEC'  # Source catalogue DEC error
-SASS = 'Predicted_Assoc'  # Source catalogue number of component associations column
+SASS = 'LGZ_Assoc'  # Source catalogue number of component associations column
 CSN = 'Source_Name'  # Component catalogue Source Name
 CCN = 'Component_Name'  # Component catalogue Component Name
 CTF = 'Total_flux'  # Component catalogue total flux column
@@ -92,8 +92,8 @@ LMS = 'LM_size'
 
 # Magnitude and Colour Likelihood Ratio
 #Odata = '/beegfs/lofar/jcroston/surveys/dr2_hosts/pwfull.txt' # Original DR1 optical txt file [not needed?]
-DR1Hosts = '/data1/tap/data/catalogues/originals/HostMagnitude_Info.txt'
-DR1HostsFull = '/data1/tap/data/catalogues/originals/HostMagnitude_InfoFull.txt'
+DR1Hosts = os.getenv('DR1Hosts') #'/data1/tap/data/catalogues/originals/HostMagnitude_Info.txt'
+DR1HostsFull = os.getenv('DR1HostsFull') #'/data1/tap/data/catalogues/originals/HostMagnitude_InfoFull.txt'
 MCLR = indir+'/MagnitudeColour/Nearest30AllLRW1band-%s.txt'
 LR = indir+'/MagnitudeColour/AllLRW1bandLR-%s.txt'
 
