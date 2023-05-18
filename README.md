@@ -14,6 +14,7 @@ Thre are three main folders:
 LOFAR
 -----
 This is the folder containing the main code running on the LOFAR Two
+
 	DR1
 	---
 The initial production and testing was run on the LOFAR DR1 datasets, and is 
@@ -27,12 +28,11 @@ The LOFAR Two-metre Sky Survey (LoTSS) VI. Optical identifications for the
 second data release (M.J. Hardcastle et al., incl. B. Barkus) in prep. This is the
 running version details in the readme.md for DR2.
 
-MeerKAT
--------
+	MeerKAT
+	-------
 There is a version adapted for use with a sample of MeerKAT MIGHTEE data that
 is still under production. This does not have the DR2 improvements and is not currently
 running.
 
 
-```RL-Xid ---> LOFAR```
 
