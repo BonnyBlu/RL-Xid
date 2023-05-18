@@ -9,11 +9,11 @@ paper:
 "The application of ridgelines in extended radio source cross-identification" 
 (B. Barkus et al.) 2022, MNRAS 509, 1 found at: https://arxiv.org/abs/2110.05254
 
-Thre are three main folders:
+There are two main folders:
 
 LOFAR
 -----
-This is the folder containing the main code running on the LOFAR Two
+This is the folder containing the main code running on the LOFAR Two-meter Sky Survey
 
 	DR1
 The initial production and testing was run on the LOFAR DR1 datasets, and is 
