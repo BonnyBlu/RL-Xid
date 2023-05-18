@@ -1,4 +1,4 @@
-# RL-Xid
+# RL-Xid Overview
 
 This repository contains the code for all available versions of RL-Xid.
 RL-Xid is an automated process which cross-identifies extended extragalactic 
@@ -17,7 +17,7 @@ second data release (M.J. Hardcastle et al., incl. B. Barkus) in prep.
 - There is a version adapted for use with a sample of MeerKAT MIGHTEE data that
 is still under production.
 
-The structure of this repository is as follows:
+The structure of this repository is as follows, and each folder contains a detailed readme:
 RL-Xid ---> LOFAR ---> DR1: Testing code
 	|     |
 	|     -------> DR2: Current code
