@@ -20,6 +20,6 @@ is still under production.
 The structure of this repository is as follows:
 RL-Xid ---> LOFAR ---> DR1: Testing code
        |     |
-       |      -------> DR2: Current code
+       |     -------> DR2: Current code
        |
        ---> MeerKAT: In progress code
