@@ -16,3 +16,10 @@ The LOFAR Two-metre Sky Survey (LoTSS) VI. Optical identifications for the
 second data release (M.J. Hardcastle et al., incl. B. Barkus) in prep.
 - There is a version adapted for use with a sample of MeerKAT MIGHTEE data that
 is still under production.
+
+The structure of this repository is as follows:
+RL-Xid ---> LOFAR ---> DR1: Testing code
+       |     |
+       |      -------> DR2: Current code
+       |
+       ---> MeerKAT: In progress code
