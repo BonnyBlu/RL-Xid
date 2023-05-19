@@ -49,7 +49,7 @@ The ouputs depend on which version is running and if the likelihood ratios are b
 
 	XXX - Ridgelines.ipynb
 
-This is a juputer notebook that runs the ridgeline drawing code part of RL-Xid.  This is a short notebook containing the functions to select sources by flux and size, create the cutouts to perform the ridgeline drawing process with, and the ridgeline drawing function itself (this is a nested function of many steps).
+This is a jupyter notebook that runs the ridgeline drawing code part of RL-Xid.  This is a short notebook containing the functions to select sources by flux and size, create the cutouts to perform the ridgeline drawing process with, and the ridgeline drawing function itself (this is a nested function of many steps).
 
 All imports are listed at the start and this file requires RidgelineFilesXXX.py, RLConstantsXXX.py, and ridge_toolkitXXX.py to run.
 
@@ -65,7 +65,7 @@ A list of the filenames used to open, save and create files in RL-Xid. An overal
 
 	ridge_toolkitXXX.py
 
-this file contains all the functions required to run the ridgeline drawing and surface brightness processes.  Each function has a detailed doc string that describes what the function does, what parameters it takes, and what out puts it returns.
+This file contains all the functions required to run the ridgeline drawing and surface brightness processes.  Each function has a detailed doc string that describes what the function does, what parameters it takes, and what out puts it returns.
 
 The imports are listed at the start and require RLConstantsXXX.py and RidglineFilesXXX.py to run.
 
