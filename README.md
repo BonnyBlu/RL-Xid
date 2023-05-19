@@ -37,10 +37,45 @@ The six files, and their import aliases are:
 - ridge_toolkitXXX.py
 - SourceSearchXXX.py
 
-XXX - LikelihoodRatio.ipynb
----
-This is a jupyter notebook that runs the likelihood ratio part of RL-Xid. the ridgelines need to be drawn first before the likelihood ratios can be calculated.  The first cell will check and run the ridgeline code if it is needed.
-All imports are listed at the start and require RLConstantsXXX.py, RidgelineFilesXXX.py
+The following is a description of each of these files including the contents of the file, which are imported into each other, and the outputs they produce.
+
+	XXX - LikelihoodRatio.ipynb
+
+This is a jupyter notebook that runs the likelihood ratio part of RL-Xid. the ridgelines need to be drawn first before the likelihood ratios can be calculated.  The first cell will check and run the ridgeline code if it is needed. Each cell contains a description of what it is doing.
+
+All imports are listed at the start and this file requires RidgelineFilesXXX.py, ridge_toolkitXXX.py, and SourceSearchXXX.py to run.
+
+The ouputs depend on which version is running and if the likelihood ratios are being compared to a truth set (a known dataset of hosts), or a threshold is set to select host for as of yet undetermined counterparts.
+
+	XXX - Ridgelines.ipynb
+
+This is a juputer notebook that runs the ridgeline drawing code part of RL-Xid.  This is a short notebook containing the functions to select sources by flux and size, create the cutouts to perform the ridgeline drawing process with, and the ridgeline drawing function itself (this is a nested function of many steps).
+
+All imports are listed at the start and this file requires RidgelineFilesXXX.py, RLConstantsXXX.py, and ridge_toolkitXXX.py to run.
+
+The outputs are the drawn ridgelines and the information text files , and a list of failed sources with images, see Barkus+ 22 for details.
+
+	RLConstantsXXX.py
+
+A list of the constants imported into the code files of RL-Xid. Created for ease of finding, changing and adding constants to multiple large files.
+
+	RidgelineFilesXXX.py
+
+A list of the filenames used to open, save and create files in RL-Xid. An overall path name has been created for naming ease, and to help build and maintain the correct file structure as many files will be produced in the process. This file also contains a list of the columns names imported from the main catalogues, to allow for easy adjustment between muiltple catalogues.
+
+	ridge_toolkitXXX.py
+
+this file contains all the functions required to run the ridgeline drawing and surface brightness processes.  Each function has a detailed doc string that describes what the function does, what parameters it takes, and what out puts it returns.
+
+The imports are listed at the start and require RLConstantsXXX.py and RidglineFilesXXX.py to run.
+
+	SourceSearchXXX.py
+
+This file contains all the functions needed in the likelihood ratio process.  There is a description of the file at the start, and each function has a detailed doc string.  These describe what the function does, what parameters it takes, and what outputs it returns.
+
+The imports are listed at the start and this file requires RLConstantsXXX.py, RidgelineFilesXXX.py and ridge_toolkitXXX.py to run.
 
 
 # Running RL-Xid
+
+Currently the working version of RL-Xid to use is the one sset up for LOFAR LoTSS DR2. The details on how to run this using qsub batching batchin gis given in the readme.md. To run this with out the batching, the batch code can be run one at a time, or the batch numbers can be set to produce a single group.
