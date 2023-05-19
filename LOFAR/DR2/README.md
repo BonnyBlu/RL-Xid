@@ -1,6 +1,6 @@
 # DR2 Instructions
 
-This is the current version of RL-Xid that is being implemented on LoTSS DR2. The files included in here in addition to the main six are those required to run everything in parallel batches. The following are the instructions for running RL-Xid in batch mode.  There are some modifications that need to be made to some of the batch files and these can be found in READMEFull.txt.  In order to run as batches DR2 - likelihoodRatios.ipynb and DR2 - Ridgelines.ipynb have been converted to .py scripts.
+This is the current version of RL-Xid that is being implemented on LoTSS DR2. The files included here are the main six required to run RL-Xid and additional files to run everything in parallel batches. The following are the instructions for running RL-Xid in batch mode.  There are some modifications that need to be made to some of the batch files and these can be found in READMEFull.txt.  In order to run as batches DR2 - likelihoodRatios.ipynb and DR2 - Ridgelines.ipynb have been converted to .py scripts.
 
 The original six files can still be run without the batching, however the batching files will provide:
 - file structure creation
