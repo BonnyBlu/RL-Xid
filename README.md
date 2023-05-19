@@ -27,7 +27,7 @@ There is a version adapted for use with a sample of MeerKAT MIGHTEE data that is
 
 There are six component files that make up the main structure of RL-Xid.  These files are needed regardless of the telescope/survey the code is being run on. The process is split into two parts and the ridgelines and likelihood ratio can be run sperately from each other, however the likelihood ratio requires the ridgelines to be drawn in order for it to run.
 
-The files are listed and described in detail below, any additional files needed for specific surveys/telescopes are detailed in the appropriate readme.md. Where a file is imported using an alias into another file the alias has been given as these are constistent across all versions of the code.  The placeholder XXX is used in the filenames to represent the location of version name indicator. For example, in XXX - LikelihoodRatio.ipynb the XXX can be replaced by DR1, DR2, or MK depending on if the file is being used for LoTSS DR1, LoTSS DR2, or MeerKAT.
+The files are listed and described in detail below, any additional files needed for specific surveys/telescopes are detailed in the appropriate readme.md. Where a file is imported using an alias into another file the alias has been given as these are constistent across all versions of the code.  The placeholder XXX is used in the filenames to represent the location of version name indicator. For example, in XXX - LikelihoodRatio.ipynb the XXX can be replaced by DR1, DR2, or MK depending on if the file is being used for LoTSS DR1, LoTSS DR2, or MeerKAT.  This XXX is the part that will change when creating new versions and needs to be changed in the imports of each file.
 
 The six files, and their import aliases are:
 - XXX - LikelihoodRatio.ipynb
@@ -37,7 +37,10 @@ The six files, and their import aliases are:
 - ridge_toolkitXXX.py
 - SourceSearchXXX.py
 
-
+XXX - LikelihoodRatio.ipynb
+---
+This is a jupyter notebook that runs the likelihood ratio part of RL-Xid. the ridgelines need to be drawn first before the likelihood ratios can be calculated.  The first cell will check and run the ridgeline code if it is needed.
+All imports are listed at the start and require RLConstantsXXX.py, RidgelineFilesXXX.py
 
 
 # Running RL-Xid
