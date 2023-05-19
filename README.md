@@ -12,7 +12,7 @@ This is the folder containing the main code running on the LOFAR Two-meter Sky S
 
 - DR1
 
-The initial production and testing was run on the LoTSS DR1 datasets, and is documented in B. Barkus et al. 2022. This version of the code no longer needs to be run as it is superceeded by the DR2 version.
+The initial production and testing was run on the LoTSS DR1 datasets, and is documented in B. Barkus et al. (2022). This version of the code no longer needs to be run as it is superceeded by the DR2 version.
 
 - DR2
 
@@ -53,7 +53,7 @@ This is a jupyter notebook that runs the ridgeline drawing code of RL-Xid.  This
 
 All imports are listed at the start, and this file requires RidgelineFilesXXX.py, RLConstantsXXX.py, and ridge_toolkitXXX.py to run.
 
-The outputs are the drawn ridgelines and the information text files, and a list of failed sources with images, see B. Barkus et al. 2022 for details.
+The outputs are the drawn ridgelines and the information text files, and a list of failed sources with images, see B. Barkus et al. (2022) for details.
 
 	RLConstantsXXX.py
 
