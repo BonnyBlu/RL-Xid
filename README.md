@@ -1,4 +1,4 @@
-# RL-XID Overview
+# RL-Xid Overview
 
 This repository contains the code for all available versions of RL-Xid. RL-Xid is an automated process which cross-identifies extended extragalactic radio sources with their optical counterparts using the innovative method of ridgelines.  The background and details of this process are described in my paper:
 
