@@ -78,4 +78,4 @@ The imports are listed at the start and this file requires RLConstantsXXX.py, Ri
 
 # Running RL-Xid
 
-Currently the working version of RL-Xid to use is the one sset up for LOFAR LoTSS DR2. The details on how to run this using qsub batching batchin gis given in the readme.md. To run this with out the batching, the batch code can be run one at a time, or the batch numbers can be set to produce a single group.
+Currently the working version of RL-Xid to use is the one set up for LOFAR LoTSS DR2. The details on how to run this using qsub batching is given in the readme.md. To run this with out the batching, the batch code can be run one at a time, or the batch numbers can be set to produce a single group.
