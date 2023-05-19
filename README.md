@@ -53,7 +53,7 @@ This is a juputer notebook that runs the ridgeline drawing code part of RL-Xid. 
 
 All imports are listed at the start and this file requires RidgelineFilesXXX.py, RLConstantsXXX.py, and ridge_toolkitXXX.py to run.
 
-The outputs are the drawn ridgelines and the information text files , and a list of failed sources with images, see Barkus+ 22 for details.
+The outputs are the drawn ridgelines and the information text files , and a list of failed sources with images, see B. Barkus et al. 2022 for details.
 
 	RLConstantsXXX.py
 
