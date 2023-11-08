@@ -11,13 +11,13 @@ Combined Dependencies for all files
 * The qsub files will need the qsub commands to run batch jobs.  They have paths to load in the correct version of Python for the file they are running.
 
 * Catalogues:
-  - Radio - from RM's code
-  - Component - from RM's code
-  - Optical - On LOFAR server/used for LA's code if go back to calculating likelihood ratios
+  - Radio 
+  - Component - labelled Components.fits
+  - Optical - On LOFAR server/used for labelled optical.fits
 
 * Previously needed files:
-  - HostMagnitude_Info.txt - provided in code folder
-  - HostMagnitude_InfoFull.txt - provided in code folder
+  - HostMagnitude_Info.txt - provided in GitHub folder
+  - HostMagnitude_InfoFull.txt - provided in GitHub folder
 
 * The batching files are written in Python 2 and RL-Xid is written in Python 3
 
@@ -52,7 +52,8 @@ Combined Dependencies for all files
   - copy
   - numpy.linalg (norm, solve)
 
-* LOFAR specific Python packages: - I believe these are on the LOFAR server
+* LOFAR specific Python packages: - I believe these are on the LOFAR GitHub at https://github.com/mhardcastle/lotss-catalogue
+  - sizeflux_tools.py
   - subim (extract_subim)
   - overlay (find_noise_area,find_noise)
   - download_image_files (LofarMaps)
@@ -66,29 +67,16 @@ Combined Dependencies for all files
 
 Individual file dependencies.
 
-filter_batch.py
----------------
-
-* runs in Python 2
+healpix_batch.py
+----------------
 
 * Python packages:
   - numpy
-  - astropy.table (Table, vstack, unique)
+  - astropy.table (Table, stack, unique)
   - sys
   - os
-
-
-opt_batch.py
-------------
-
-* runs in Python 2
-
-* Python packages:
-  - numpy
-  - astropy.table (Table, vstack, unique)
-  - sys
-  - os
-  - glob
+  - astropy_healpix (HEALPix)
+  - astropy.units
 
 
 DR2_setup.py - Run: run_setup.qsub
@@ -134,6 +122,9 @@ DR2_ridgelines.py - Run: run_ridgelines.qsub
   - astropy.table (Table)
   - warnings (simplefilter, resetwarnings)
 
+* LOFAR specific Python packages: - I believe these are on the LOFAR github at https://github.com/mhardcastle/lotss-catalogue
+  - sizeflux_tools.py
+
 * Related file imports:
   - RidgelineFilesDR2
   - RLConstantsDR2
@@ -148,12 +139,16 @@ DR2_LR.py - Run: run_lr_fall.qsub
 * runs in Python 3
 
 * Python packages:
+  - numpy
   - astropy.io (fits)
   - os
   - astropy.table (Table)
   - pandas
   - os.path (exists)
   - sklearn.neighbors (KernelDensity)
+  - sys
+  - astropy_healpix (HEALPix)
+  - astropy.units
 
 * Related file imports:
   - RidgelineFilesDR2
@@ -162,7 +157,7 @@ DR2_LR.py - Run: run_lr_fall.qsub
   - SourceSearchDR2
 
 
-unbatch.py
+unbatchoriginal.py
 ----------
 
 * runs in Python 2
@@ -218,6 +213,9 @@ ridge_toolkitDR2.py
   - skimage.filters (threshold_minimum)
   - copy
 
+* LOFAR specific Python packages: - I believe these are on the LOFAR github at https://github.com/mhardcastle/lotss-catalogue
+  - sizeflux_tools.py (Flood, length3, Mask)
+
 * Related file imports:
   - RidgelineFilesDR2
   - RLConstantsDR2
@@ -243,5 +241,27 @@ SourceSearchDR2.py
   - RidgelineFilesDR2
 
 
+filter_batch.py
+---------------
 
+* runs in Python 2
+
+* Python packages:
+  - numpy
+  - astropy.table (Table, vstack, unique)
+  - sys
+  - os
+
+
+opt_batch.py
+------------
+
+* runs in Python 2
+
+* Python packages:
+  - numpy
+  - astropy.table (Table, vstack, unique)
+  - sys
+  - os
+  - glob
 
