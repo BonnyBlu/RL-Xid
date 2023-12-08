@@ -1,5 +1,7 @@
 # MeerKAT Code Instructions
 
+PLEASE DO NO TUSE THIS VERSION DOES NOT REALLY WORK! - GO LOOK AT DR2 IN LOFAR
+
 This is a work in progress version of RL-Xid.
 
 This version will draw ridgelines for data from the MIGHTEE survey, and has been tested on a small sample from the XMM-LSS dataset.
