@@ -634,7 +634,8 @@ def CreatePositionTable(source_list, available_sources, lofar_table):
     
     """
     ***
-    ISN'T NEEDED FOR DR2 AND WILL NOT WORK
+    NOT NEEDED IN DR2 AND WILL NOT WORK - NO LONGER WORKS AS 
+    AVAILABLE_SOURCES NO LONGER CONTAINS PIXELS VALUES
     ***
     Creates a table listing each soure that successfully draw a ridgeline. 
     The table contains Source name, AllWISE ID, the RA and DEC of the LOFAR 
@@ -691,13 +692,13 @@ def CreatePositionTable(source_list, available_sources, lofar_table):
     for source in source_list:
         for asource in available_sources:
             if source == asource[0]:
-                source_name = asource[0]
-                LRA = float(asource[4])
-                LDEC = float(asource[5])
-                LRA_errRad = float(asource[10])
-                LDEC_errRad = float(asource[11])
-                host_RA = float(asource[12])
-                host_DEC = float(asource[13])
+                source_name = asource['Source_Name']
+                LRA = float(asource['RA'])
+                LDEC = float(asource['DEC'])
+                LRA_errRad = float(asource['E_RA'])
+                LDEC_errRad = float(asource['E_DEC'])
+                host_RA = float(asource[12])  ## THIS NO LONGER EXISTS AND THEREFORE THIS FUNCTION NO LONGER WORKS
+                host_DEC = float(asource[13])  ## THIS NO LONGER EXISTS AND THEREFORE THIS FUNCTION NO LONGER WORKS
                 
                 allwise = SourceInfo(source_name, lofar_table)[3].strip('\n').strip()
                 file3 = open(RLF.coc %source_name, 'r')
@@ -881,11 +882,11 @@ def CreateRDistTable(source, available_sources):
     #for source in source_list:
     for asource in available_sources:
         if source == asource[0]:
-            #source_name = asource[0]
-            LOFAR_RA = float(asource[4])
-            LOFAR_DEC = float(asource[5])
-            LOFAR_RA_errRad = float(asource[8])
-            LOFAR_DEC_errRad = float(asource[9])
+            #source_name = asource['Source_Name']
+            LOFAR_RA = float(asource['RA'])
+            LOFAR_DEC = float(asource['DEC'])
+            LOFAR_RA_errRad = float(asource['E_RA'])
+            LOFAR_DEC_errRad = float(asource['E_DEC'])
             
             file1 = open(RLF.R1 %source, 'r')
             file2 = open(RLF.R2 %source, 'r')
@@ -1031,7 +1032,8 @@ def GetHostLoc(asource):
     
     """
     ***
-    NOT NEEDED IN DR2 AND WILL NOT WORK
+    NOT NEEDED IN DR2 AND WILL NOT WORK - NO LONGER WORKS AS 
+    AVAILABLE_SOURCES NO LONGER CONTAINS PIXELS VALUES
     ***
     Returns the x and y coordinate in pixels of the host ID, of the LOFAR
     catalogue postion, and the pixel size of the source.  This is retrieved
@@ -1064,11 +1066,11 @@ def GetHostLoc(asource):
              
     """
 
-    lmsize = float(asource[6])
-    LOFARx = float(asource[1])
-    LOFARy = float(asource[2])
-    hostx = float(asource[8]) - (LOFARx - lmsize)  ## Subtract the size of the cutout
-    hosty = float(asource[9]) - (LOFARy - lmsize)  ## to bring to the original location
+    lmsize = float(asource['Size'])
+    LOFARx = float(asource[1]) ## THIS NO LONGER EXISTS AND THEREFORE THIS FUNCTION NO LONGER WORKS
+    LOFARy = float(asource[2]) ## THIS NO LONGER EXISTS AND THEREFORE THIS FUNCTION NO LONGER WORKS
+    hostx = float(asource[8]) - (LOFARx - lmsize)  ## Subtract the size of the cutout  ## THIS NO LONGER EXISTS AND THEREFORE THIS FUNCTION NO LONGER WORKS
+    hosty = float(asource[9]) - (LOFARy - lmsize)  ## to bring to the original location  ## THIS NO LONGER EXISTS AND THEREFORE THIS FUNCTION NO LONGER WORKS
         
     return hostx, hosty, LOFARx, LOFARy, lmsize
 
@@ -1208,7 +1210,8 @@ def HostDistAlongLine(source_list, available_sources):
     
     """
     ***
-    NOT NEEDED IN DR2 AND WILL NOT WORK
+    NOT NEEDED IN DR2 AND WILL NOT WORK - NO LONGER WORKS AS 
+    AVAILABLE_SOURCES NO LONGER CONTAINS PIXELS VALUES
     ***
     Returns all the host ID distances along their respective ridgelines.
     It returns a list of just the distances and an array of the distances
@@ -1282,7 +1285,8 @@ def HostDisFromLofar(source_list, available_sources):
     
     """
     ***
-    NOT NEEDED IN DR2 AND WILL NOT WORK
+    NOT NEEDED IN DR2 AND WILL NOT WORK - NO LONGER WORKS AS 
+    AVAILABLE_SOURCES NO LONGER CONTAINS PIXELS VALUES
     ***
     Returns an array of distances of the host IDs from their respective
     LOFAR catalogue positions and an array of distances and the LOFAR
@@ -1325,11 +1329,11 @@ def HostDisFromLofar(source_list, available_sources):
     
     for source in source_list:
         for asource in available_sources:
-            if source == asource[0]:    
-                LOFARx = float(asource[1])
-                LOFARy = float(asource[2])
-                hostx = float(asource[8])
-                hosty = float(asource[9])
+            if source == asource['Source_Name']:    
+                LOFARx = float(asource[1])  ## THIS NO LONGER EXISTS AND THEREFORE THIS FUNCTION NO LONGER WORKS
+                LOFARy = float(asource[2])  ## THIS NO LONGER EXISTS AND THEREFORE THIS FUNCTION NO LONGER WORKS
+                hostx = float(asource[8])  ## THIS NO LONGER EXISTS AND THEREFORE THIS FUNCTION NO LONGER WORKS
+                hosty = float(asource[9])  ## THIS NO LONGER EXISTS AND THEREFORE THIS FUNCTION NO LONGER WORKS
                 dist = np.sqrt((hostx - LOFARx) ** 2 + (hosty - LOFARy) ** 2)
                 distfromlofar.append(dist)
                 distfromlofarids = np.vstack(((asource[0], dist), distfromlofarids))
@@ -1342,6 +1346,7 @@ def HostLikelihoodRatio(table):
     
     """
     ***
+    FUNCTION DEPRECIATED
     NOT NEEDED IN DR2 AND WILL NOT WORK (AS TABLES DO NOT WORK)
     ***
     Calculates Best et. al.'s likelihood ratio using the R distances from 
@@ -1394,7 +1399,9 @@ def HostPerpDis(source_list, available_sources):
     
     """
     ***
-    NOT NEEDED IN DR2 AND WILL NOT WORK
+    NOT NEEDED IN DR2 AND WILL NOT WORK - NO LONGER WORKS AS 
+    AVAILABLE_SOURCES NO LONGER CONTAINS PIXELS VALUES (AND 
+    NESTED FUNCTIONS DO NOT WORK).
     ***
     Returns a list of perpedicular distances of the host IDs from
     their respective ridgelines and an array of perpendicular distances
@@ -1460,7 +1467,8 @@ def HostRFromLofar(positions):
     
     """
     ***
-    NOT NEEDED IN DR2 AND WILL NOT WORK
+    NOT NEEDED IN DR2 AND WILL NOT WORK - NO LONGER WORKS AS 
+    AVAILABLE_SOURCES NO LONGER CONTAINS PIXELS VALUES
     ***
     Finds the R distance as defined in Best et. al. (2003).  This is the
     distance between two points including the calculated uncertainities on
@@ -1502,10 +1510,10 @@ def HostRFromLofar(positions):
         LOFAR_DEC = row[3]
         LOFAR_RA_errRad = row[4]
         LOFAR_DEC_errRad = row[5]
-        Host_RA = row[6]
-        Host_DEC = row[7]
-        Host_RA_errOpt = row[8]
-        Host_DEC_errOpt = row[9]
+        Host_RA = row[6]  ## THIS NO LONGER EXISTS AND THEREFORE THIS FUNCTION NO LONGER WORKS
+        Host_DEC = row[7]  ## THIS NO LONGER EXISTS AND THEREFORE THIS FUNCTION NO LONGER WORKS
+        Host_RA_errOpt = row[8]  ## THIS NO LONGER EXISTS AND THEREFORE THIS FUNCTION NO LONGER WORKS
+        Host_DEC_errOpt = row[9]  ## THIS NO LONGER EXISTS AND THEREFORE THIS FUNCTION NO LONGER WORKS
         
         SigRA, SigDEC = SigmaR(LOFAR_RA_errRad, LOFAR_DEC_errRad, Host_RA_errOpt, Host_DEC_errOpt)
         
@@ -1526,7 +1534,8 @@ def HostRFromRL(source_list, available_sources, positions):
     
     """
     ***
-    NOT NEEDED IN DR2 AND WILL NOT WORK
+    NOT NEEDED IN DR2 AND WILL NOT WORK - NO LONGER WORKS AS 
+    AVAILABLE_SOURCES NO LONGER CONTAINS PIXELS VALUES
     ***
     Calculates Best et. al. (2003) R distance of the host from the succesfully
     drawn ridgeline.
@@ -1578,11 +1587,11 @@ def HostRFromRL(source_list, available_sources, positions):
                 lofarx = float(asource[1])
                 lofary = float(asource[2])
                 lmsize = float(asource[6])
-                hostx = float(asource[8]) - (lofarx - lmsize)
-                hosty = float(asource[9]) - (lofary - lmsize)
-                hostRA = float(asource[12])
-                hostDEC = float(asource[13])
-                host = np.array([hostx, hosty])
+                hostx = float(asource[8]) - (lofarx - lmsize)  ## THIS NO LONGER EXISTS AND THEREFORE THIS FUNCTION NO LONGER WORKS
+                hosty = float(asource[9]) - (lofary - lmsize)  ## THIS NO LONGER EXISTS AND THEREFORE THIS FUNCTION NO LONGER WORKS
+                hostRA = float(asource[12])  ## THIS NO LONGER EXISTS AND THEREFORE THIS FUNCTION NO LONGER WORKS
+                hostDEC = float(asource[13])  ## THIS NO LONGER EXISTS AND THEREFORE THIS FUNCTION NO LONGER WORKS
+                host = np.array([hostx, hosty])  ## THIS NO LONGER EXISTS AND THEREFORE THIS FUNCTION NO LONGER WORKS
                 
                 file1 = open(RLF.R1 %source_name, 'r')
                 file2 = open(RLF.R2 %source_name, 'r')
@@ -1605,8 +1614,8 @@ def HostRFromRL(source_list, available_sources, positions):
                 
                 for row in positions:                  
                     if source_name == row[0]:  ## find the optical errors from position_info
-                        optRAerr = float(row[8])
-                        optDECerr = float(row[9])
+                        optRAerr = float(row[8])  ## THIS NO LONGER EXISTS AND THEREFORE THIS FUNCTION NO LONGER WORKS
+                        optDECerr = float(row[9])  ## THIS NO LONGER EXISTS AND THEREFORE THIS FUNCTION NO LONGER WORKS
                 
                 radRAerr = np.float128(RLC.radraerr)  ##  define the radio errors as zero on the RL
                 radDECerr = np.float128(RLC.raddecerr)  ##  until I know better
@@ -1633,7 +1642,9 @@ def HostUnderN(source_list, lofar_table, n):
     
     """
     ***
-    ISN'T NEEDED FOR DR2 AND WILL NOT WORK
+    NOT NEEDED IN DR2 AND WILL NOT WORK - NO LONGER WORKS AS 
+    AVAILABLE_SOURCES NO LONGER CONTAINS PIXELS VALUES (AND NESTED
+    FUNCTIONS DO NO WORK).
     ***
     Counts the number of hosts which occur within the Nth closest possible
     sources to the LOFAR catalogue position.  Returns the number of hosts
@@ -1644,7 +1655,7 @@ def HostUnderN(source_list, lofar_table, n):
     ----------
     
     source_list - list,
-                  a list of the sources that succesfully drew a ridgeline.     
+                  a list of the sources that successfully drew a ridgeline.     
     
     lofar_table - table,
                   the table containing all the LOFAR data from the .fits
@@ -1928,6 +1939,11 @@ def LikelihoodRatios(available_sources,debug=False):
 def SimplifiedLR(source_list, available_sources):
     
     """
+    ***
+    IS NOT NEEDED FOR DR2 SO SHOULDN'T MATTER. THE PIXEL VALUES OF LOFAR RA AND
+    DEC NO LONGER EXIST SO THIS FUNCTION NEEDS RE-WRITING IF IT IS TO BE USED 
+    TO ADJUST FOR THIS.
+    ***
     Calculates the likelihood ratio of the n closest sources as determined by
     the function NClosestRDistances and found in the corresponding .txt files
     for the R distances to the LOFAR Catalogue position and to the ridgeline.
@@ -1956,10 +1972,10 @@ def SimplifiedLR(source_list, available_sources):
     for source in source_list:
         for asource in available_sources:
             if source == asource[0]:
-                source_name = asource[0]
-                lofarx = float(asource[1])
-                lofary = float(asource[2])
-                lmsize = float(asource[6])
+                source_name = asource['Source_Name']
+                lofarx = float(asource[1])  ## THIS NO LONGER EXISTS AND THEREFORE THIS FUNCTION NO LONGER WORKS
+                lofary = float(asource[2])  ## THIS NO LONGER EXISTS AND THEREFORE THIS FUNCTION NO LONGER WORKS
+                lmsize = float(asource['Size'])
                 
                 file1 = open(RLF.R1 %source_name, 'r')
                 file2 = open(RLF.R2 %source_name, 'r')
@@ -2219,7 +2235,9 @@ def NClosestSourcesDistances(source_list, lofar_table, n):
     
     """
     ***
-    ISN'T NEEDED FOR DR2 AND WILL NOT WORK
+    NOT NEEDED IN DR2 AND WILL NOT WORK - NO LONGER WORKS AS 
+    AVAILABLE_SOURCES NO LONGER CONTAINS PIXELS VALUES (AND NESTED
+    FUNCTIONS DO NOT WORK).
     ***
     Returns the number of hosts found within the Nth closest sources to the
     LOFAR catalogue position. Also returns lists of the distances of the
